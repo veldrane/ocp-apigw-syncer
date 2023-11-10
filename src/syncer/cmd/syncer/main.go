@@ -14,6 +14,8 @@ import (
 	checker "syncer/gen/checker"
 	root "syncer/gen/root"
 	"syscall"
+
+	nginx "github.com/nginx"
 )
 
 func main() {
@@ -37,11 +39,17 @@ func main() {
 	}
 
 	var (
-		pods []syncer.NginxInstance
+		nginxs        nginx.NginxInstancies
+		requestConfig nginx.RequestConfig
 	)
 	{
-		pods = syncer.New()
-		pods = append(pods, syncer.NginxInstance{Hostname: "localhost", Address: "127.0.0.1", Port: "8080"})
+		requestConfig = nginx.RequestConfig{HostHeader: "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz", Retries: 5, SyncTimeout: 20}
+
+		nginxs = nginx.New()
+		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.1", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-vxtvg")
+		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.11", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-asdvg")
+		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.12", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-rtypb")
+		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.13", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-adfse")
 	}
 
 	// Initialize the services.
@@ -50,7 +58,7 @@ func main() {
 		rootSvc    root.Service
 	)
 	{
-		checkerSvc = syncer.NewChecker(&pods, logger)
+		checkerSvc = syncer.NewChecker(&requestConfig, &nginxs, logger)
 		rootSvc = syncer.NewRoot(logger)
 	}
 

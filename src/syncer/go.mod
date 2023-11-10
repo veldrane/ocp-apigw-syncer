@@ -3,6 +3,7 @@ module syncer
 go 1.20
 
 require goa.design/goa/v3 v3.13.2
+require	github.com/nginx v0.0.0
 
 require (
 	github.com/AnatolyRugalev/goregen v0.1.0 // indirect
@@ -18,3 +19,5 @@ require (
 	golang.org/x/tools v0.13.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/nginx => ./local/nginx
