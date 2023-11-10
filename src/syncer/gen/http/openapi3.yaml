@@ -29,6 +29,7 @@ components:
             properties:
                 status:
                     type: string
+                    default: synced
                     example: Fugiat nulla.
             example:
                 status: Perspiciatis provident consequatur repellat enim.

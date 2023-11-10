@@ -19,7 +19,9 @@ var ResultOfNginxInstance = ResultType("app/vnd.nginxs", func() {
 })
 
 var ResultOfSync = ResultType("app/vnd.sync", func() {
-	Attribute("status", String)
+	Attribute("status", String, func() {
+		Default("synced")
+	})
 })
 
 var _ = Service("checker", func() {

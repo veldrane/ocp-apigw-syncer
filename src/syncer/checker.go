@@ -40,5 +40,5 @@ func (s *checkersrvc) Get(ctx context.Context) (res *checker.Sync, err error) {
 		status = "not_synced"
 	}
 
-	return &checker.Sync{Status: &status}, nil
+	return &checker.Sync{Status: status}, nil
 }

@@ -14,14 +14,18 @@ import (
 // GetResponseBody is the type of the "checker" service "get" endpoint HTTP
 // response body.
 type GetResponseBody struct {
-	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	Status string `form:"status" json:"status" xml:"status"`
 }
 
 // NewGetResponseBody builds the HTTP response body from the result of the
 // "get" endpoint of the "checker" service.
 func NewGetResponseBody(res *checkerviews.SyncView) *GetResponseBody {
-	body := &GetResponseBody{
-		Status: res.Status,
+	body := &GetResponseBody{}
+	if res.Status != nil {
+		body.Status = *res.Status
+	}
+	if res.Status == nil {
+		body.Status = "synced"
 	}
 	return body
 }

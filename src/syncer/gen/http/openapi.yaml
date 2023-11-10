@@ -34,6 +34,7 @@ definitions:
         properties:
             status:
                 type: string
+                default: synced
                 example: Aut ut nam eos.
         description: GetResponseBody result type (default view)
         example:

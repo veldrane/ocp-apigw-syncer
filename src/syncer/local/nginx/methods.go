@@ -42,20 +42,19 @@ func (n *NginxInstancies) Check(config *RequestConfig, p CheckPayload, ctx conte
 	pods := n.getPods(ctx)
 
 	for k, v := range pods {
-		if *p.origin == k {
+		if k == *p.origin {
 			logger.Printf("[ Check ] -> Same origin %s - skipping\n", k)
 			continue
 		}
 
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, hostname string, pod *NginxInstance) {
+		go func(wg *sync.WaitGroup, hostname string, pod NginxInstance) {
 			defer wg.Done()
-
-			getTokenStatus(ctx, p.token, config, pod)
-
 			logger.Printf("[ Check thread ] -> checking auth_token %s on hostname %s with address %s\n", *p.token, hostname, pod.Address)
+
+			getTokenStatus(ctx, p.token, config, &pod, logger)
 			time.Sleep(time.Duration(rand.Intn(3096)) * time.Millisecond)
-		}(&wg, k, &v)
+		}(&wg, k, v)
 	}
 
 	go func(wg *sync.WaitGroup) {
@@ -94,11 +93,13 @@ func (n *NginxInstancies) getPods(ctx context.Context) (res map[string]NginxInst
 	return res
 }
 
-func getTokenStatus(ctx context.Context, token *string, config *RequestConfig, instance *NginxInstance) (err error) {
+func getTokenStatus(ctx context.Context, token *string, config *RequestConfig, pod *NginxInstance, logger *log.Logger) (err error) {
 
 	//ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(200*time.Millisecond))
 	//defer cancel()
 	//req, err := http.NewRequestWithContext(ctx, "GET", "http://"+hostname+":8080", body)
+
+	logger.Printf("[ Get Token Status ] -> trying connect to %s:%s ", pod.Address, pod.Port)
 
 	return nil
 }

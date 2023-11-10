@@ -32,7 +32,7 @@ var MethodNames = [1]string{"get"}
 
 // Sync is the result type of the checker service get method.
 type Sync struct {
-	Status *string
+	Status string
 }
 
 // MakeNotFound builds a goa.ServiceError from an error.
@@ -64,8 +64,12 @@ func NewViewedSync(res *Sync, view string) *checkerviews.Sync {
 
 // newSync converts projected type Sync to service type Sync.
 func newSync(vres *checkerviews.SyncView) *Sync {
-	res := &Sync{
-		Status: vres.Status,
+	res := &Sync{}
+	if vres.Status != nil {
+		res.Status = *vres.Status
+	}
+	if vres.Status == nil {
+		res.Status = "synced"
 	}
 	return res
 }
@@ -74,7 +78,7 @@ func newSync(vres *checkerviews.SyncView) *Sync {
 // "default" view.
 func newSyncView(res *Sync) *checkerviews.SyncView {
 	vres := &checkerviews.SyncView{
-		Status: res.Status,
+		Status: &res.Status,
 	}
 	return vres
 }
