@@ -35,7 +35,7 @@ func (n *NginxInstancies) Delete(hostname string) error {
 	return nil
 }
 
-func (n *NginxInstancies) Check(config *RequestConfig, p CheckPayload, ctx context.Context, logger *log.Logger) (err error) {
+func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Context, logger *log.Logger) (err error) {
 
 	var wg sync.WaitGroup
 	status := make(chan interface{})
@@ -114,7 +114,7 @@ func (n *NginxInstancies) getPods(ctx context.Context) (res map[string]NginxInst
 	return res
 }
 
-func getTokenStatus(ctx context.Context, token *string, config *RequestConfig, pod *NginxInstance, logger *log.Logger) (res int, err error) {
+func getTokenStatus(ctx context.Context, token *string, config *Config, pod *NginxInstance, logger *log.Logger) (res int, err error) {
 
 	w, err := os.OpenFile("/tmp/sslkey.out", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
@@ -122,22 +122,11 @@ func getTokenStatus(ctx context.Context, token *string, config *RequestConfig, p
 	}
 	defer w.Close()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://"+pod.Address+":"+pod.Port+config.HttpPath, nil)
+	client, err := initHttpClient(w, false)
+	req, err := initHttpRequest(ctx, token, config, pod)
 	if err != nil {
-		logger.Printf("[ Get Token Status ] -> Failed new request wirh context with error %s\n", err)
+		logger.Printf("[ Get Token Status ] -> Failed create reqeust with context with err %s\n", err)
 		return 0, err
-	}
-
-	req.Header.Set("Cookie", "auth_token="+*token+"; Domain="+config.HostDomain+"; Path=/; SameSite=Strict; HttpOnly; Secure;")
-	req.Host = config.HostHeader
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true, KeyLogWriter: w},
-	}
-
-	client := http.Client{
-		Transport: tr,
-		Timeout:   500 * time.Millisecond,
 	}
 
 	for i := 1; i <= config.Retries; i++ {
@@ -160,10 +149,38 @@ func getTokenStatus(ctx context.Context, token *string, config *RequestConfig, p
 			err = errors.New(fmt.Sprint(statusCode))
 			return res, err
 		}
-
 	}
 
-	logger.Printf("[ Get Token Status ] -> Token %s on pod %s is not synced finaly. Exititng with 401", *token, pod.Address)
-
+	logger.Printf("[ Get Token Status ] -> Token %s on pod %s is not synced in the end. Exititng with 401", *token, pod.Address)
 	return 401, nil
+}
+
+func initHttpClient(w *os.File, debug bool) (*http.Client, error) {
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	if debug {
+		tr.TLSClientConfig.KeyLogWriter = w
+	}
+
+	client := http.Client{
+		Transport: tr,
+		Timeout:   500 * time.Millisecond,
+	}
+
+	return &client, nil
+}
+
+func initHttpRequest(ctx context.Context, token *string, config *Config, pod *NginxInstance) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://"+pod.Address+":"+pod.Port+config.HttpPath, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Cookie", "auth_token="+*token+"; Domain="+config.HostDomain+"; Path=/; SameSite=Strict; HttpOnly; Secure;")
+	req.Host = config.HostHeader
+
+	return req, nil
 }

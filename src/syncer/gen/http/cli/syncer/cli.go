@@ -30,7 +30,7 @@ root default
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` checker get` + "\n" +
+	return os.Args[0] + ` checker get --origin "Aut ut nam eos." --token "Corrupti hic architecto reprehenderit velit reiciendis."` + "\n" +
 		os.Args[0] + ` root default` + "\n" +
 		""
 }
@@ -47,7 +47,9 @@ func ParseEndpoint(
 	var (
 		checkerFlags = flag.NewFlagSet("checker", flag.ContinueOnError)
 
-		checkerGetFlags = flag.NewFlagSet("get", flag.ExitOnError)
+		checkerGetFlags      = flag.NewFlagSet("get", flag.ExitOnError)
+		checkerGetOriginFlag = checkerGetFlags.String("origin", "REQUIRED", "")
+		checkerGetTokenFlag  = checkerGetFlags.String("token", "REQUIRED", "")
 
 		rootFlags = flag.NewFlagSet("root", flag.ContinueOnError)
 
@@ -132,7 +134,7 @@ func ParseEndpoint(
 			switch epn {
 			case "get":
 				endpoint = c.Get()
-				data = nil
+				data, err = checkerc.BuildGetPayload(*checkerGetOriginFlag, *checkerGetTokenFlag)
 			}
 		case "root":
 			c := rootc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -164,12 +166,14 @@ Additional help:
 `, os.Args[0])
 }
 func checkerGetUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] checker get
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] checker get -origin STRING -token STRING
 
 Get last full report
+    -origin STRING: 
+    -token STRING: 
 
 Example:
-    %[1]s checker get
+    %[1]s checker get --origin "Aut ut nam eos." --token "Corrupti hic architecto reprehenderit velit reiciendis."
 `, os.Args[0])
 }
 

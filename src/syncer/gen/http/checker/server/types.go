@@ -8,24 +8,14 @@
 package server
 
 import (
-	checkerviews "syncer/gen/checker/views"
+	checker "syncer/gen/checker"
 )
 
-// GetResponseBody is the type of the "checker" service "get" endpoint HTTP
-// response body.
-type GetResponseBody struct {
-	Status string `form:"status" json:"status" xml:"status"`
-}
+// NewGetPayload builds a checker service get endpoint payload.
+func NewGetPayload(origin string, token string) *checker.GetPayload {
+	v := &checker.GetPayload{}
+	v.Origin = origin
+	v.Token = token
 
-// NewGetResponseBody builds the HTTP response body from the result of the
-// "get" endpoint of the "checker" service.
-func NewGetResponseBody(res *checkerviews.SyncView) *GetResponseBody {
-	body := &GetResponseBody{}
-	if res.Status != nil {
-		body.Status = *res.Status
-	}
-	if res.Status == nil {
-		body.Status = "synced"
-	}
-	return body
+	return v
 }

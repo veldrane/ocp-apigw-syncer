@@ -12,20 +12,20 @@ import (
 // checker service example implementation.
 // The example methods log the requests and return zero values.
 type checkersrvc struct {
-	requestConfig *nginx.RequestConfig
+	requestConfig *nginx.Config
 	nginxs        *nginx.NginxInstancies
 	logger        *log.Logger
 }
 
 // NewChecker returns the checker service implementation.
-func NewChecker(requestConfig *nginx.RequestConfig, nginxs *nginx.NginxInstancies, logger *log.Logger) checker.Service {
+func NewChecker(requestConfig *nginx.Config, nginxs *nginx.NginxInstancies, logger *log.Logger) checker.Service {
 	return &checkersrvc{requestConfig, nginxs, logger}
 }
 
 // Get last full report
-func (s *checkersrvc) Get(ctx context.Context) (res *checker.Sync, err error) {
+func (s *checkersrvc) Get(ctx context.Context, p *checker.GetPayload) (res *checker.Sync, err error) {
 
-	cp := nginx.InitCheckPayload("cd2b0e377a483c206080e5686f233ee8", "ng-plus-apigw-6cc76b4d5-rtypb")
+	cp := nginx.InitCheckPayload(p.Token, p.Origin)
 
 	ctxCheck, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()

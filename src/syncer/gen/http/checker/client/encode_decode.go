@@ -34,6 +34,26 @@ func (c *Client) BuildGetRequest(ctx context.Context, v any) (*http.Request, err
 	return req, nil
 }
 
+// EncodeGetRequest returns an encoder for requests sent to the checker get
+// server.
+func EncodeGetRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*checker.GetPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("checker", "get", "*checker.GetPayload", v)
+		}
+		{
+			head := p.Origin
+			req.Header.Set("X-Nginx-Origin", head)
+		}
+		{
+			head := p.Token
+			req.Header.Set("X-Feg-Token", head)
+		}
+		return nil
+	}
+}
+
 // DecodeGetResponse returns a decoder for responses returned by the checker
 // get endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
@@ -54,19 +74,17 @@ func DecodeGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body GetResponseBody
-				err  error
+				status string
 			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("checker", "get", err)
+			statusRaw := resp.Header.Get("X-Token-Status")
+			if statusRaw != "" {
+				status = statusRaw
+			} else {
+				status = "synced"
 			}
-			p := NewGetSyncOK(&body)
+			p := NewGetSyncOK(status)
 			view := "default"
 			vres := &checkerviews.Sync{Projected: p, View: view}
-			if err = checkerviews.ValidateSync(vres); err != nil {
-				return nil, goahttp.ErrValidationError("checker", "get", err)
-			}
 			res := checker.NewSync(vres)
 			return res, nil
 		default:

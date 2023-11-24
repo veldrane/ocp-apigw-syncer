@@ -9,7 +9,7 @@ type NginxInstance struct {
 	Port    string
 }
 
-type RequestConfig struct {
+type Config struct {
 	HostHeader  string
 	HostDomain  string
 	HttpPath    string

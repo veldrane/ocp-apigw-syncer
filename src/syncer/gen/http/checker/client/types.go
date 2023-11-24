@@ -11,18 +11,11 @@ import (
 	checkerviews "syncer/gen/checker/views"
 )
 
-// GetResponseBody is the type of the "checker" service "get" endpoint HTTP
-// response body.
-type GetResponseBody struct {
-	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
-}
-
 // NewGetSyncOK builds a "checker" service "get" endpoint result from a HTTP
 // "OK" response.
-func NewGetSyncOK(body *GetResponseBody) *checkerviews.SyncView {
-	v := &checkerviews.SyncView{
-		Status: body.Status,
-	}
+func NewGetSyncOK(status string) *checkerviews.SyncView {
+	v := &checkerviews.SyncView{}
+	v.Status = &status
 
 	return v
 }

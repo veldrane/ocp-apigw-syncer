@@ -20,22 +20,23 @@ paths:
             summary: get checker
             description: Get last full report
             operationId: checker#get
+            parameters:
+                - name: X-Nginx-Origin
+                  in: header
+                  description: nginx instance origin of the request
+                  required: true
+                  type: string
+                - name: X-Feg-Token
+                  in: header
+                  description: token cookie for synchronization check
+                  required: true
+                  type: string
             responses:
                 "200":
                     description: OK response.
-                    schema:
-                        $ref: '#/definitions/CheckerGetResponseBody'
+                    headers:
+                        X-Token-Status:
+                            type: string
+                            default: synced
             schemes:
                 - http
-definitions:
-    CheckerGetResponseBody:
-        title: 'Mediatype identifier: app/vnd.sync; view=default'
-        type: object
-        properties:
-            status:
-                type: string
-                default: synced
-                example: Aut ut nam eos.
-        description: GetResponseBody result type (default view)
-        example:
-            status: Corrupti hic architecto reprehenderit velit reiciendis.

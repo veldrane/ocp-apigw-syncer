@@ -31,9 +31,9 @@ func NewClient(get goa.Endpoint) *Client {
 //   - "InternalError" (type *goa.ServiceError): Internal Server Error
 //   - "Unauthorized" (type *goa.ServiceError): Unauthorized
 //   - error: internal error
-func (c *Client) Get(ctx context.Context) (res *Sync, err error) {
+func (c *Client) Get(ctx context.Context, p *GetPayload) (res *Sync, err error) {
 	var ires any
-	ires, err = c.GetEndpoint(ctx, nil)
+	ires, err = c.GetEndpoint(ctx, p)
 	if err != nil {
 		return
 	}

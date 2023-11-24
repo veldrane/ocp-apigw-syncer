@@ -39,11 +39,11 @@ func main() {
 	}
 
 	var (
-		nginxs        nginx.NginxInstancies
-		requestConfig nginx.RequestConfig
+		nginxs nginx.NginxInstancies
+		Config nginx.Config
 	)
 	{
-		requestConfig = nginx.RequestConfig{HostHeader: "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz", HttpPath: "/check", HostDomain: "ifortuna.cz", Retries: 5, SyncTimeout: 100}
+		Config = nginx.Config{HostHeader: "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz", HttpPath: "/check", HostDomain: "ifortuna.cz", Retries: 5, SyncTimeout: 100}
 
 		nginxs = nginx.New()
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.1", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-vxtvg")
@@ -59,7 +59,7 @@ func main() {
 		rootSvc    root.Service
 	)
 	{
-		checkerSvc = syncer.NewChecker(&requestConfig, &nginxs, logger)
+		checkerSvc = syncer.NewChecker(&Config, &nginxs, logger)
 		rootSvc = syncer.NewRoot(logger)
 	}
 

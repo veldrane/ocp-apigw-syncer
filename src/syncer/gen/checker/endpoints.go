@@ -34,7 +34,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 // service "checker".
 func NewGetEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		res, err := s.Get(ctx)
+		p := req.(*GetPayload)
+		res, err := s.Get(ctx, p)
 		if err != nil {
 			return nil, err
 		}

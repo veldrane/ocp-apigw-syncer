@@ -6,3 +6,25 @@
 // $ goa gen syncer/design
 
 package client
+
+import (
+	checker "syncer/gen/checker"
+)
+
+// BuildGetPayload builds the payload for the checker get endpoint from CLI
+// flags.
+func BuildGetPayload(checkerGetOrigin string, checkerGetToken string) (*checker.GetPayload, error) {
+	var origin string
+	{
+		origin = checkerGetOrigin
+	}
+	var token string
+	{
+		token = checkerGetToken
+	}
+	v := &checker.GetPayload{}
+	v.Origin = origin
+	v.Token = token
+
+	return v, nil
+}

@@ -13,6 +13,7 @@ import (
 	checkerviews "syncer/gen/checker/views"
 
 	goahttp "goa.design/goa/v3/http"
+	goa "goa.design/goa/v3/pkg"
 )
 
 // EncodeGetResponse returns an encoder for responses returned by the checker
@@ -20,9 +21,38 @@ import (
 func EncodeGetResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
 		res := v.(*checkerviews.Sync)
-		enc := encoder(ctx, w)
-		body := NewGetResponseBody(res.Projected)
+		if res.Projected.Status != nil {
+			w.Header().Set("X-Token-Status", *res.Projected.Status)
+		} else {
+			w.Header().Set("X-Token-Status", "synced")
+		}
 		w.WriteHeader(http.StatusOK)
-		return enc.Encode(body)
+		return nil
+	}
+}
+
+// DecodeGetRequest returns a decoder for requests sent to the checker get
+// endpoint.
+func DecodeGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			origin string
+			token  string
+			err    error
+		)
+		origin = r.Header.Get("X-Nginx-Origin")
+		if origin == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("origin", "header"))
+		}
+		token = r.Header.Get("X-Feg-Token")
+		if token == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("token", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetPayload(origin, token)
+
+		return payload, nil
 	}
 }

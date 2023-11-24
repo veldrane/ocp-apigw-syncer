@@ -42,11 +42,22 @@ var _ = Service("checker", func() {
 	Method("get", func() {
 
 		Description("Get last full report")
+		Payload(func() {
+			Field(1, "origin", String, "nginx instance origin of the request")
+			Field(2, "token", String, "token cookie for synchronization check")
+			Required("origin", "token")
+		})
 		Result(ResultOfSync)
 
 		HTTP(func() {
 			GET("/v1/synced")
-			Response(StatusOK)
+			Header("origin:X-Nginx-Origin")
+			Header("token:X-Feg-Token")
+			Response(func() {
+				Code(StatusOK)
+				Header("status:X-Token-Status")
+			})
+			//Response(StatusOK)
 		})
 
 	})
