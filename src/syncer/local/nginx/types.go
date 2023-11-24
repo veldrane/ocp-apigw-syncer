@@ -11,6 +11,8 @@ type NginxInstance struct {
 
 type RequestConfig struct {
 	HostHeader  string
+	HostDomain  string
+	HttpPath    string
 	SyncTimeout int
 	Retries     int
 }

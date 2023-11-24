@@ -25,7 +25,7 @@ func NewChecker(requestConfig *nginx.RequestConfig, nginxs *nginx.NginxInstancie
 // Get last full report
 func (s *checkersrvc) Get(ctx context.Context) (res *checker.Sync, err error) {
 
-	cp := nginx.InitCheckPayload("1234", "ng-plus-apigw-6cc76b4d5-rtypb")
+	cp := nginx.InitCheckPayload("cd2b0e377a483c206080e5686f233ee8", "ng-plus-apigw-6cc76b4d5-rtypb")
 
 	ctxCheck, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()

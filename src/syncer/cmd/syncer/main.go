@@ -43,13 +43,14 @@ func main() {
 		requestConfig nginx.RequestConfig
 	)
 	{
-		requestConfig = nginx.RequestConfig{HostHeader: "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz", Retries: 5, SyncTimeout: 20}
+		requestConfig = nginx.RequestConfig{HostHeader: "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz", HttpPath: "/check", HostDomain: "ifortuna.cz", Retries: 5, SyncTimeout: 100}
 
 		nginxs = nginx.New()
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.1", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-vxtvg")
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.11", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-asdvg")
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.12", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-rtypb")
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.13", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-adfse")
+		nginxs.Push(nginx.NginxInstance{Address: "10.6.173.157", Port: "443"}, "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz")
 	}
 
 	// Initialize the services.

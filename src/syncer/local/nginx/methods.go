@@ -2,9 +2,12 @@ package nginx
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
+	"fmt"
 	"log"
-	"math/rand"
+	"net/http"
+	"os"
 	"sync"
 	"time"
 )
@@ -36,10 +39,13 @@ func (n *NginxInstancies) Check(config *RequestConfig, p CheckPayload, ctx conte
 
 	var wg sync.WaitGroup
 	status := make(chan interface{})
+	defer close(status)
 
 	logger.Printf("[ Check ] -> Checking sync status for auth_token %s ....", *p.token)
-
 	pods := n.getPods(ctx)
+	httpStatus := make([]int, len(pods))
+
+	i := 0
 
 	for k, v := range pods {
 		if k == *p.origin {
@@ -48,13 +54,19 @@ func (n *NginxInstancies) Check(config *RequestConfig, p CheckPayload, ctx conte
 		}
 
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, hostname string, pod NginxInstance) {
+
+		go func(wg *sync.WaitGroup, hostname string, pod NginxInstance, httpCode *int) {
 			defer wg.Done()
 			logger.Printf("[ Check thread ] -> checking auth_token %s on hostname %s with address %s\n", *p.token, hostname, pod.Address)
 
-			getTokenStatus(ctx, p.token, config, &pod, logger)
-			time.Sleep(time.Duration(rand.Intn(3096)) * time.Millisecond)
-		}(&wg, k, v)
+			*httpCode, err = getTokenStatus(ctx, p.token, config, &pod, logger)
+
+			if err != nil {
+				logger.Printf("[ Check thread ] -> warning check auth_token %s on pod %s failed ", *p.token, hostname)
+
+			}
+		}(&wg, k, v, &httpStatus[i])
+		i++
 	}
 
 	go func(wg *sync.WaitGroup) {
@@ -64,7 +76,7 @@ func (n *NginxInstancies) Check(config *RequestConfig, p CheckPayload, ctx conte
 
 	select {
 	case <-status:
-		logger.Println("[ Check ] -> all threads are done sucessfully for token ", *p.token)
+		logger.Printf("[ Check ] -> all threads are done sucessfully for token %s, status %d \n", *p.token, httpStatus)
 		err = nil
 	case <-ctx.Done():
 		logger.Println("[ Check ] -> warning, timeout occured for token:", *p.token)
@@ -73,6 +85,15 @@ func (n *NginxInstancies) Check(config *RequestConfig, p CheckPayload, ctx conte
 
 	return err
 }
+
+//func evalGroup(statusCodes []*int) error {
+
+//	for _, v := range statusCodes {
+
+//	}
+
+//	return nil
+//}
 
 func InitCheckPayload(token string, origin string) CheckPayload {
 
@@ -93,13 +114,56 @@ func (n *NginxInstancies) getPods(ctx context.Context) (res map[string]NginxInst
 	return res
 }
 
-func getTokenStatus(ctx context.Context, token *string, config *RequestConfig, pod *NginxInstance, logger *log.Logger) (err error) {
+func getTokenStatus(ctx context.Context, token *string, config *RequestConfig, pod *NginxInstance, logger *log.Logger) (res int, err error) {
 
-	//ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(200*time.Millisecond))
-	//defer cancel()
-	//req, err := http.NewRequestWithContext(ctx, "GET", "http://"+hostname+":8080", body)
+	w, err := os.OpenFile("/tmp/sslkey.out", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		logger.Printf("failed to open file err %+v", err)
+	}
+	defer w.Close()
 
-	logger.Printf("[ Get Token Status ] -> trying connect to %s:%s ", pod.Address, pod.Port)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://"+pod.Address+":"+pod.Port+config.HttpPath, nil)
+	if err != nil {
+		logger.Printf("[ Get Token Status ] -> Failed new request wirh context with error %s\n", err)
+		return 0, err
+	}
 
-	return nil
+	req.Header.Set("Cookie", "auth_token="+*token+"; Domain="+config.HostDomain+"; Path=/; SameSite=Strict; HttpOnly; Secure;")
+	req.Host = config.HostHeader
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true, KeyLogWriter: w},
+	}
+
+	client := http.Client{
+		Transport: tr,
+		Timeout:   500 * time.Millisecond,
+	}
+
+	for i := 1; i <= config.Retries; i++ {
+
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Printf("[ Get Token Status ] -> Failed client.Do with err %s\n", err)
+			return 0, err
+		}
+
+		switch statusCode := resp.StatusCode; statusCode {
+		case 200:
+			return resp.StatusCode, nil
+		case 401:
+			logger.Printf("[ Get Token Status ] -> Token %s on pod %s not sync... retry\n", *token, pod.Address)
+			time.Sleep(time.Duration(config.SyncTimeout * int(time.Millisecond)))
+			continue
+		default:
+			res = 0
+			err = errors.New(fmt.Sprint(statusCode))
+			return res, err
+		}
+
+	}
+
+	logger.Printf("[ Get Token Status ] -> Token %s on pod %s is not synced finaly. Exititng with 401", *token, pod.Address)
+
+	return 401, nil
 }
