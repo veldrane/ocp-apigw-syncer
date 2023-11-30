@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -22,6 +23,7 @@ type PodsT struct{}
 
 type SessionT struct {
 	coreclient corev1client.CoreV1Client
+	appsclient appsv1client.AppsV1Client
 }
 
 type IndexError struct{}
@@ -31,7 +33,7 @@ var (
 )
 
 func (err IndexError) Error() string {
-	return ("Index not found or is more pods than configs, please check the configmap or access rights")
+	return fmt.Sprintf("Index not found or is more pods than configs, please check the configmap or access rights")
 }
 
 func Session() *SessionT {
@@ -43,8 +45,13 @@ func Session() *SessionT {
 		panic("Cannot login to the cluster")
 	}
 
+	appsclient, err := appsv1client.NewForConfig(restconfig)
+	if err != nil {
+		panic("Cannot login to the cluster")
+	}
 	res := SessionT{
 		coreclient: *coreclient,
+		appsclient: *appsclient,
 	}
 
 	return &res
@@ -148,4 +155,27 @@ func GetIndex(podlist []string, hostname *string, path *string) (int, error) {
 		}
 	}
 	return idx, nil
+}
+
+func (session *SessionT) GetDeploymentRevision(ctx *context.Context, deployment *string, namespace *string) (string, error) {
+
+	var revision string
+
+	getOptions := metav1.GetOptions{}
+
+	d, err := session.appsclient.Deployments(*namespace).Get(*ctx, *deployment, getOptions)
+
+	if err != nil {
+		return "", err
+	}
+
+	for k, v := range d.Annotations {
+
+		if k == "deployment.kubernetes.io/revision" {
+			revision = v
+			break
+		}
+	}
+
+	return revision, nil
 }

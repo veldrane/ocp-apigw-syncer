@@ -2,10 +2,11 @@ module syncer
 
 go 1.20
 
-require goa.design/goa/v3 v3.13.2
-
-require github.com/nginx v0.0.0
-
+require ( 
+	goa.design/goa/v3 v3.13.2
+	github.com/nginx v0.0.0
+	bitbucket.org/veldrane/golibs/ocp4cli v0.0.0
+)
 require (
 	github.com/AnatolyRugalev/goregen v0.1.0 // indirect
 	github.com/dimfeld/httppath v0.0.0-20170720192232-ee938bf73598 // indirect
@@ -22,4 +23,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/nginx => ./local/nginx
+replace (
+	github.com/nginx => ./local/nginx
+	bitbucket.org/veldrane/golibs/ocp4cli => ./local/ocp4cli
+)

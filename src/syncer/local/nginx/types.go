@@ -10,6 +10,8 @@ type NginxInstance struct {
 }
 
 type Config struct {
+	Namespace   string
+	Deployment  string
 	HostHeader  string
 	HostDomain  string
 	HttpPath    string
