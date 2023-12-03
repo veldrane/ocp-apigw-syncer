@@ -12,10 +12,10 @@ import (
 )
 
 // NewGetPayload builds a checker service get endpoint payload.
-func NewGetPayload(origin string, token string) *checker.GetPayload {
+func NewGetPayload(origin string, authToken string) *checker.GetPayload {
 	v := &checker.GetPayload{}
 	v.Origin = origin
-	v.Token = token
+	v.AuthToken = authToken
 
 	return v
 }

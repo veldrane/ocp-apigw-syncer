@@ -24,7 +24,7 @@ paths:
                     description: nginx instance origin of the request
                     example: Perspiciatis provident consequatur repellat enim.
                   example: Vitae qui id qui.
-                - name: X-Feg-Token
+                - name: X-Auth-Token
                   in: header
                   description: token cookie for synchronization check
                   allowEmptyValue: true

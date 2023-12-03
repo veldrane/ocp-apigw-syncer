@@ -15,6 +15,7 @@ type Config struct {
 	HostHeader  string
 	HostDomain  string
 	HttpPath    string
+	HttpsPort   string
 	SyncTimeout int
 	Retries     int
 }

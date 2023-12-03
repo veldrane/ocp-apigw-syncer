@@ -36,22 +36,22 @@ func EncodeGetResponse(encoder func(context.Context, http.ResponseWriter) goahtt
 func DecodeGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			origin string
-			token  string
-			err    error
+			origin    string
+			authToken string
+			err       error
 		)
 		origin = r.Header.Get("X-Nginx-Origin")
 		if origin == "" {
 			err = goa.MergeErrors(err, goa.MissingFieldError("origin", "header"))
 		}
-		token = r.Header.Get("X-Feg-Token")
-		if token == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("token", "header"))
+		authToken = r.Header.Get("X-Auth-Token")
+		if authToken == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("auth_token", "header"))
 		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetPayload(origin, token)
+		payload := NewGetPayload(origin, authToken)
 
 		return payload, nil
 	}

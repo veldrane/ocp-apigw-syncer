@@ -19,8 +19,8 @@ func handleBackgroundGatherer(ctx context.Context, config *nginx.Config, logger 
 		ctx := context.Background()
 		go func() {
 			for {
-				lastDeployment, _ := ocpSession.GetDeploymentRevision(&ctx, &config.Deployment, &config.Namespace)
-				logger.Printf("[ Scraping thread ] -> New definition has been loaded from OCP %s", lastDeployment)
+				runningPods, _ := ocpSession.GetPods(&ctx, config)
+				logger.Printf("[ Scraping thread ] -> New definition has been loaded from OCP %s", runningPods)
 				time.Sleep(time.Duration(10) * time.Second)
 			}
 		}()

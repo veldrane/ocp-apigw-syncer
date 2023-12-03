@@ -47,8 +47,8 @@ func EncodeGetRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Re
 			req.Header.Set("X-Nginx-Origin", head)
 		}
 		{
-			head := p.Token
-			req.Header.Set("X-Feg-Token", head)
+			head := p.AuthToken
+			req.Header.Set("X-Auth-Token", head)
 		}
 		return nil
 	}

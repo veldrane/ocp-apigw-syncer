@@ -13,18 +13,18 @@ import (
 
 // BuildGetPayload builds the payload for the checker get endpoint from CLI
 // flags.
-func BuildGetPayload(checkerGetOrigin string, checkerGetToken string) (*checker.GetPayload, error) {
+func BuildGetPayload(checkerGetOrigin string, checkerGetAuthToken string) (*checker.GetPayload, error) {
 	var origin string
 	{
 		origin = checkerGetOrigin
 	}
-	var token string
+	var authToken string
 	{
-		token = checkerGetToken
+		authToken = checkerGetAuthToken
 	}
 	v := &checker.GetPayload{}
 	v.Origin = origin
-	v.Token = token
+	v.AuthToken = authToken
 
 	return v, nil
 }

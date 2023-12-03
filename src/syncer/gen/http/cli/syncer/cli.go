@@ -30,7 +30,7 @@ root default
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` checker get --origin "Aut ut nam eos." --token "Corrupti hic architecto reprehenderit velit reiciendis."` + "\n" +
+	return os.Args[0] + ` checker get --origin "Aut ut nam eos." --auth-token "Corrupti hic architecto reprehenderit velit reiciendis."` + "\n" +
 		os.Args[0] + ` root default` + "\n" +
 		""
 }
@@ -47,9 +47,9 @@ func ParseEndpoint(
 	var (
 		checkerFlags = flag.NewFlagSet("checker", flag.ContinueOnError)
 
-		checkerGetFlags      = flag.NewFlagSet("get", flag.ExitOnError)
-		checkerGetOriginFlag = checkerGetFlags.String("origin", "REQUIRED", "")
-		checkerGetTokenFlag  = checkerGetFlags.String("token", "REQUIRED", "")
+		checkerGetFlags         = flag.NewFlagSet("get", flag.ExitOnError)
+		checkerGetOriginFlag    = checkerGetFlags.String("origin", "REQUIRED", "")
+		checkerGetAuthTokenFlag = checkerGetFlags.String("auth-token", "REQUIRED", "")
 
 		rootFlags = flag.NewFlagSet("root", flag.ContinueOnError)
 
@@ -134,7 +134,7 @@ func ParseEndpoint(
 			switch epn {
 			case "get":
 				endpoint = c.Get()
-				data, err = checkerc.BuildGetPayload(*checkerGetOriginFlag, *checkerGetTokenFlag)
+				data, err = checkerc.BuildGetPayload(*checkerGetOriginFlag, *checkerGetAuthTokenFlag)
 			}
 		case "root":
 			c := rootc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -166,14 +166,14 @@ Additional help:
 `, os.Args[0])
 }
 func checkerGetUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] checker get -origin STRING -token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] checker get -origin STRING -auth-token STRING
 
 Get last full report
     -origin STRING: 
-    -token STRING: 
+    -auth-token STRING: 
 
 Example:
-    %[1]s checker get --origin "Aut ut nam eos." --token "Corrupti hic architecto reprehenderit velit reiciendis."
+    %[1]s checker get --origin "Aut ut nam eos." --auth-token "Corrupti hic architecto reprehenderit velit reiciendis."
 `, os.Args[0])
 }
 

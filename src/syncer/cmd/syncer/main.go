@@ -40,20 +40,21 @@ func main() {
 
 	var (
 		nginxs nginx.NginxInstancies
-		Config nginx.Config
+		config nginx.Config
 	)
 	{
-		Config = nginx.Config{
+		config = nginx.Config{
 			HostHeader:  "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz",
 			HttpPath:    "/check",
 			HostDomain:  "ifortuna.cz",
+			HttpsPort:   "8443",
 			Deployment:  "ng-plus-apigw",
 			Namespace:   "apigwp-cz",
 			Retries:     5,
 			SyncTimeout: 100}
 
 		nginxs = nginx.New()
-		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.1", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-vxtvg")
+		//nginxs.Push(nginx.NginxInstance{Address: "127.0.0.1", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-vxtvg")
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.11", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-asdvg")
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.12", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-rtypb")
 		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.13", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-adfse")
@@ -66,7 +67,7 @@ func main() {
 		rootSvc    root.Service
 	)
 	{
-		checkerSvc = syncer.NewChecker(&Config, &nginxs, logger)
+		checkerSvc = syncer.NewChecker(&config, &nginxs, logger)
 		rootSvc = syncer.NewRoot(logger)
 	}
 
@@ -135,7 +136,7 @@ func main() {
 		logger.Fatalf("invalid host argument: %q (valid hosts: )\n", *hostF)
 	}
 
-	handleBackgroundGatherer(ctx, &Config, logger, errc2)
+	handleBackgroundGatherer(ctx, &config, logger, errc2)
 
 	// Wait for signal.
 	logger.Printf("Main (%v)", <-errc1)

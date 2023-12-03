@@ -26,7 +26,7 @@ paths:
                   description: nginx instance origin of the request
                   required: true
                   type: string
-                - name: X-Feg-Token
+                - name: X-Auth-Token
                   in: header
                   description: token cookie for synchronization check
                   required: true

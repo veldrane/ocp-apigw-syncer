@@ -35,7 +35,7 @@ type GetPayload struct {
 	// nginx instance origin of the request
 	Origin string
 	// token cookie for synchronization check
-	Token string
+	AuthToken string
 }
 
 // Sync is the result type of the checker service get method.

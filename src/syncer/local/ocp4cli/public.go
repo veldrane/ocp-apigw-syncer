@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 
+	nginx "github.com/nginx"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -19,21 +18,24 @@ type ListGeter interface {
 	GetList(SessionT) []string
 }
 
-type PodsT struct{}
-
 type SessionT struct {
 	coreclient corev1client.CoreV1Client
 	appsclient appsv1client.AppsV1Client
 }
 
 type IndexError struct{}
+type RsNotFound struct{}
 
 var (
 	restconfig *rest.Config
 )
 
 func (err IndexError) Error() string {
-	return fmt.Sprintf("Index not found or is more pods than configs, please check the configmap or access rights")
+	return "Index not found or is more pods than configs, please check the configmap or access rights"
+}
+
+func (err RsNotFound) Error() string {
+	return "Replicastion set based on the revision is not found!"
 }
 
 func Session() *SessionT {
@@ -89,75 +91,39 @@ func getRestConfig() *rest.Config {
 	return restconfig
 }
 
-func GetNamespace() string {
+func (session *SessionT) GetPods(ctx *context.Context, config *nginx.Config) (map[string]nginx.NginxInstance, error) {
 
-	namespace := os.Getenv("POD_NAMESPACE")
-	return namespace
-}
+	podList := nginx.New()
+	var pod nginx.NginxInstance
 
-func (pods PodsT) GetList(session *SessionT, namespace *string, replicaSet *string) ([]string, error) {
+	revision, _ := session.getDeploymentRevision(ctx, &config.Deployment, &config.Namespace)
+	replicaSet, _ := session.getRsBasedOnRevision(ctx, &revision, &config.Namespace, &config.Deployment)
 
-	var podList []string
+	rse := strings.Split(replicaSet, "-")
+	podsHash := rse[len(rse)-1]
 
 	listOptions := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=ng-plus-apigw,pod-template-hash=%s", *replicaSet),
+		LabelSelector: fmt.Sprintf("app=ng-plus-apigw,pod-template-hash=%s", podsHash),
 	}
 
-	p, err := session.coreclient.Pods(*namespace).List(context.Background(), listOptions)
+	p, err := session.coreclient.Pods(config.Namespace).List(context.Background(), listOptions)
 
 	if err != nil {
 		return nil, err
 	}
 
-	//sort.Slice(p.Items, func(i, j int) bool {
-	//	return p.Items[i].CreationTimestamp.Before(&p.Items[j].CreationTimestamp)
-	//} )
-
 	for _, k := range p.Items {
-		podList = append(podList, k.Name)
-	}
-
-	sort.Strings(podList)
-
-	return podList, nil
-}
-
-func GetReplicationSet() string {
-
-	hostname := os.Getenv("HOSTNAME")
-	parts := strings.Split(hostname, "-")
-	hash := ""
-	for i := 0; i < (len(parts) - 1); i++ {
-		hash = (parts[i])
-	}
-
-	//rs := ("ng-plus-apigw-" + hash)
-
-	return hash
-}
-
-func GetIndex(podlist []string, hostname *string, path *string) (int, error) {
-
-	files, _ := filepath.Glob(*path + "config-*.yaml")
-
-	error := IndexError{}
-
-	if len(files) < len(podlist) {
-		return 0, error
-	}
-
-	idx := 0
-
-	for i, k := range podlist {
-		if k == *hostname {
-			idx = i % len(podlist)
-			break
+		pod = nginx.NginxInstance{
+			Address: k.Status.PodIP,
+			Port:    config.HttpsPort,
 		}
+		podList.Pods[k.Name] = pod
 	}
-	return idx, nil
+
+	return podList.Pods, nil
 }
 
-func (session *SessionT) GetDeploymentRevision(ctx *context.Context, deployment *string, namespace *string) (string, error) {
+func (session *SessionT) getDeploymentRevision(ctx *context.Context, deployment *string, namespace *string) (string, error) {
 
 	var revision string
 
@@ -178,4 +144,41 @@ func (session *SessionT) GetDeploymentRevision(ctx *context.Context, deployment 
 	}
 
 	return revision, nil
+}
+
+func (session *SessionT) getRsBasedOnRevision(ctx *context.Context, revision *string, namespace *string, deployment *string) (string, error) {
+
+	var err error
+	var rs string
+
+	listOptions := metav1.ListOptions{
+		LabelSelector: "app=ng-plus-apigw",
+	}
+
+	rsl, err := session.appsclient.ReplicaSets(*namespace).List(*ctx, listOptions)
+
+	if err != nil {
+		return "", err
+	}
+
+	for _, k := range rsl.Items {
+		for l, m := range k.Annotations {
+			if l == "deployment.kubernetes.io/revision" {
+				if m == *revision {
+					rs = k.Name
+					break
+				}
+			}
+		}
+		if rs != "" {
+			break
+		}
+	}
+
+	if rs == "" {
+		err := RsNotFound{}
+		return "", err
+	}
+
+	return rs, nil
 }

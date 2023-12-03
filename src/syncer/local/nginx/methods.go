@@ -38,8 +38,9 @@ func (n *NginxInstancies) Delete(hostname string) error {
 func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Context, logger *log.Logger) (err error) {
 
 	var wg sync.WaitGroup
-	status := make(chan interface{})
-	defer close(status)
+	wgStatus := make(chan interface{})
+
+	defer close(wgStatus)
 
 	logger.Printf("[ Check ] -> Checking sync status for auth_token %s ....", *p.token)
 	pods := n.getPods(ctx)
@@ -50,6 +51,8 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 	for k, v := range pods {
 		if k == *p.origin {
 			logger.Printf("[ Check ] -> Same origin %s - skipping\n", k)
+			httpStatus[i] = 200
+			i++
 			continue
 		}
 
@@ -57,6 +60,7 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 
 		go func(wg *sync.WaitGroup, hostname string, pod NginxInstance, httpCode *int) {
 			defer wg.Done()
+
 			logger.Printf("[ Check thread ] -> checking auth_token %s on hostname %s with address %s\n", *p.token, hostname, pod.Address)
 
 			*httpCode, err = getTokenStatus(ctx, p.token, config, &pod, logger)
@@ -71,13 +75,13 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 
 	go func(wg *sync.WaitGroup) {
 		wg.Wait()
-		status <- true
+		wgStatus <- true
 	}(&wg)
 
 	select {
-	case <-status:
+	case <-wgStatus:
 		logger.Printf("[ Check ] -> all threads are done sucessfully for token %s, status %d \n", *p.token, httpStatus)
-		err = nil
+		err = errors.New(evalGroup(httpStatus))
 	case <-ctx.Done():
 		logger.Println("[ Check ] -> warning, timeout occured for token:", *p.token)
 		err = errors.New("timeout")
@@ -86,14 +90,34 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 	return err
 }
 
-//func evalGroup(statusCodes []*int) error {
+func evalGroup(statusCodes []int) string {
 
-//	for _, v := range statusCodes {
+	oks, errs := 0, 0
+	res := "NotSynced"
 
-//	}
+	for _, v := range statusCodes {
+		switch statusCode := v; statusCode {
+		case 200:
+			oks++
+		default:
+			errs++
+		}
+	}
 
-//	return nil
-//}
+	//fmt.Printf("Debug: evalGroup oks: %d, errors %d \n", oks, errs)
+	if errs == 0 && oks > 0 {
+		res = "Synced"
+	} else if errs > 0 && oks > 0 {
+		rate := (float32(oks) / float32(len(statusCodes))) * 100
+		//fmt.Printf("Debug: rate2 %f, status codes: %d  \n", rate, len(statusCodes))
+		if rate > 50 {
+			//fmt.Printf("Debug: partial synced \n")
+			res = "PartialySynced"
+		}
+	}
+
+	return res
+}
 
 func InitCheckPayload(token string, origin string) CheckPayload {
 
