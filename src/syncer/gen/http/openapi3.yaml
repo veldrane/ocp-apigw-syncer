@@ -4,7 +4,7 @@ info:
     description: Service achieving atomic synchronization for jwt token in ng-plus distributed environment
     version: "1.0"
 servers:
-    - url: http://localhost:8080
+    - url: http://0.0.0.0:8080
 paths:
     /v1/synced:
         get:

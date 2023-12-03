@@ -38,11 +38,11 @@ func (n *NginxInstancies) Delete(hostname string) error {
 func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Context, logger *log.Logger) (err error) {
 
 	var wg sync.WaitGroup
-	wgStatus := make(chan interface{})
+	wgStatusDone := make(chan interface{})
 
-	defer close(wgStatus)
+	defer close(wgStatusDone)
 
-	logger.Printf("[ Check ] -> Checking sync status for auth_token %s ....", *p.token)
+	logger.Printf("[ Check ] -> Checking sync status for auth_token %s ....", *p.authToken)
 	pods := n.getPods(ctx)
 	httpStatus := make([]int, len(pods))
 
@@ -57,16 +57,15 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 		}
 
 		wg.Add(1)
-
 		go func(wg *sync.WaitGroup, hostname string, pod NginxInstance, httpCode *int) {
 			defer wg.Done()
 
-			logger.Printf("[ Check thread ] -> checking auth_token %s on hostname %s with address %s\n", *p.token, hostname, pod.Address)
+			logger.Printf("[ Check thread ] -> checking auth_token %s on hostname %s with address %s\n", *p.authToken, hostname, pod.Address)
 
-			*httpCode, err = getTokenStatus(ctx, p.token, config, &pod, logger)
+			*httpCode, err = getTokenStatus(ctx, p.authToken, config, &pod, logger)
 
 			if err != nil {
-				logger.Printf("[ Check thread ] -> warning check auth_token %s on pod %s failed ", *p.token, hostname)
+				logger.Printf("[ Check thread ] -> warning check auth_token %s on pod %s failed ", *p.authToken, hostname)
 
 			}
 		}(&wg, k, v, &httpStatus[i])
@@ -75,15 +74,15 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 
 	go func(wg *sync.WaitGroup) {
 		wg.Wait()
-		wgStatus <- true
+		wgStatusDone <- true
 	}(&wg)
 
 	select {
-	case <-wgStatus:
-		logger.Printf("[ Check ] -> all threads are done sucessfully for token %s, status %d \n", *p.token, httpStatus)
+	case <-wgStatusDone:
+		logger.Printf("[ Check ] -> all threads are done sucessfully for token %s, status %d \n", *p.authToken, httpStatus)
 		err = errors.New(evalGroup(httpStatus))
 	case <-ctx.Done():
-		logger.Println("[ Check ] -> warning, timeout occured for token:", *p.token)
+		logger.Println("[ Check ] -> warning, timeout occured for token:", *p.authToken)
 		err = errors.New("timeout")
 	}
 
@@ -104,26 +103,32 @@ func evalGroup(statusCodes []int) string {
 		}
 	}
 
+	successRate := (float32(oks) / float32(len(statusCodes))) * 100
 	//fmt.Printf("Debug: evalGroup oks: %d, errors %d \n", oks, errs)
-	if errs == 0 && oks > 0 {
+	//if errs == 0 && oks > 0 {
+	//	res = "Synced"
+	//} else if errs > 0 && oks > 0 {
+	//fmt.Printf("Debug: rate2 %f, status codes: %d  \n", rate, len(statusCodes))
+	//	if successRate > 50 {
+	//		//fmt.Printf("Debug: partial synced \n")
+	//		res = "PartialySynced"
+	//	}
+	//}
+
+	if successRate > 99 {
 		res = "Synced"
-	} else if errs > 0 && oks > 0 {
-		rate := (float32(oks) / float32(len(statusCodes))) * 100
-		//fmt.Printf("Debug: rate2 %f, status codes: %d  \n", rate, len(statusCodes))
-		if rate > 50 {
-			//fmt.Printf("Debug: partial synced \n")
-			res = "PartialySynced"
-		}
+	} else if successRate > 50 {
+		res = "Partialy"
 	}
 
 	return res
 }
 
-func InitCheckPayload(token string, origin string) CheckPayload {
+func InitCheckPayload(authToken string, origin string) CheckPayload {
 
 	res := CheckPayload{
-		token:  &token,
-		origin: &origin,
+		authToken: &authToken,
+		origin:    &origin,
 	}
 
 	return res
@@ -191,7 +196,7 @@ func initHttpClient(w *os.File, debug bool) (*http.Client, error) {
 
 	client := http.Client{
 		Transport: tr,
-		Timeout:   500 * time.Millisecond,
+		Timeout:   200 * time.Millisecond,
 	}
 
 	return &client, nil
@@ -207,4 +212,38 @@ func initHttpRequest(ctx context.Context, token *string, config *Config, pod *Ng
 	req.Host = config.HostHeader
 
 	return req, nil
+}
+
+func IsChanged(ocpPods map[string]NginxInstance, storedPods map[string]NginxInstance, logger *log.Logger) bool {
+
+	if len(ocpPods) != len(storedPods) {
+		logger.Printf("[ Scraping thread ] -> New pods detected %d %d", len(ocpPods), len(storedPods))
+		return true
+	}
+
+	for i := range ocpPods {
+		if storedPods[i] == (NginxInstance{}) {
+			logger.Printf("[ Scraping thread ] -> Pods changed! New configuration will be stored!")
+			return true
+		}
+	}
+
+	return false
+}
+
+func (n *NginxInstancies) Update(ngs map[string]NginxInstance, logger *log.Logger) error {
+
+	n.Lock.Lock()
+
+	for k := range n.Pods {
+		delete(n.Pods, k)
+	}
+
+	for k, v := range ngs {
+		n.Pods[k] = v
+	}
+
+	n.Lock.Unlock()
+
+	return nil
 }

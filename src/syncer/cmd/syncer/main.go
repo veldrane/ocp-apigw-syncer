@@ -55,10 +55,10 @@ func main() {
 
 		nginxs = nginx.New()
 		//nginxs.Push(nginx.NginxInstance{Address: "127.0.0.1", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-vxtvg")
-		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.11", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-asdvg")
-		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.12", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-rtypb")
-		nginxs.Push(nginx.NginxInstance{Address: "127.0.0.13", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-adfse")
-		nginxs.Push(nginx.NginxInstance{Address: "10.6.173.157", Port: "443"}, "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz")
+		//nginxs.Push(nginx.NginxInstance{Address: "172.32.15.184", Port: config.HttpsPort}, "ng-plus-apigw-6dd49bb9b-ktl2h")
+		//nginxs.Push(nginx.NginxInstance{Address: "172.32.93.176", Port: config.HttpsPort}, "ng-plus-apigw-6dd49bb9b-m5jl7")
+		//nginxs.Push(nginx.NginxInstance{Address: "172.32.97.254", Port: config.HttpsPort}, "ng-plus-apigw-6dd49bb9b-zszhn")
+		//nginxs.Push(nginx.NginxInstance{Address: "10.6.173.157", Port: "443"}, "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz")
 	}
 
 	// Initialize the services.
@@ -109,7 +109,7 @@ func main() {
 	switch *hostF {
 	case "":
 		{
-			addr := "http://localhost:8080"
+			addr := "http://0.0.0.0:8080"
 			u, err := url.Parse(addr)
 			if err != nil {
 				logger.Fatalf("invalid URL %#v: %s\n", addr, err)
@@ -136,7 +136,7 @@ func main() {
 		logger.Fatalf("invalid host argument: %q (valid hosts: )\n", *hostF)
 	}
 
-	handleBackgroundGatherer(ctx, &config, logger, errc2)
+	handleBackgroundGatherer(ctx, &nginxs, &config, logger, errc2)
 
 	// Wait for signal.
 	logger.Printf("Main (%v)", <-errc1)

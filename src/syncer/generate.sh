@@ -4,4 +4,5 @@ rm -rf gen/
 rm -f syncer
 goa gen syncer/design
 goa example syncer/design
-go build ./cmd/syncer
+export CGO_ENABLED=0
+go build -ldflags="-extldflags=-static" ./cmd/syncer

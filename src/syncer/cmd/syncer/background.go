@@ -11,7 +11,7 @@ import (
 	nginx "github.com/nginx"
 )
 
-func handleBackgroundGatherer(ctx context.Context, config *nginx.Config, logger *log.Logger, errc chan error) {
+func handleBackgroundGatherer(ctx context.Context, pods *nginx.NginxInstancies, config *nginx.Config, logger *log.Logger, errc chan error) {
 
 	go func() {
 		logger.Printf("[ Scraping thread ] -> Started sucessfully with period %s seconds", strconv.Itoa(10))
@@ -20,7 +20,11 @@ func handleBackgroundGatherer(ctx context.Context, config *nginx.Config, logger 
 		go func() {
 			for {
 				runningPods, _ := ocpSession.GetPods(&ctx, config)
-				logger.Printf("[ Scraping thread ] -> New definition has been loaded from OCP %s", runningPods)
+				logger.Printf("[ Scraping thread ] -> Waking up, checking ocp configuration.... %s", runningPods)
+				if nginx.IsChanged(runningPods, pods.Pods, logger) {
+					pods.Update(runningPods, logger)
+					logger.Printf("[ Scraping thread ] -> New definition has been loaded from OCP %s", runningPods)
+				}
 				time.Sleep(time.Duration(10) * time.Second)
 			}
 		}()

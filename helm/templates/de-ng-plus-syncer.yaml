@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  generation: 1
+  labels:
+    template: ng-plus-syncer
+    apigw: ng-plus-syncer
+  name: ng-plus-syncer
+spec:
+  replicas: {{ include "replicaCount" . }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:  
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ng-plus-syncer
+  template:
+    metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+      creationTimestamp: null
+      labels:
+        app: ng-plus-syncer
+      name: ng-plus-syncer
+    spec:
+      containers:
+      - env:
+        - name: TZ
+          value: Europe/Prague
+        image: czdcm-quay.lx.ifortuna.cz/shared-images/syncer:0.9.3b
+        imagePullPolicy: Always
+        name: syncer
+        resources:
+          limits:
+            cpu: 400m
+            memory: 400M
+          requests:
+            cpu: 100m
+            memory: 400M
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      {{ if (or (eq .Values.env "p") (eq .Values.env "s")) -}}
+      nodeSelector:
+        compute: ingress
+      {{ end -}}
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        {{- if (or (eq .Values.env "s") (eq .Values.env "p")) }}
+        sysctls:
+        - name: net.ipv4.ip_local_port_range
+          value: "1025 65000"
+        - name: net.core.somaxconn
+          value: "1024"
+        {{- end }}
+      terminationGracePeriodSeconds: 30
+      {{ if (or (eq .Values.env "p") (eq .Values.env "s")) -}}
+      tolerations:
+      - effect: NoSchedule
+        key: schedule
+        operator: Equal
+        value: ingress
+      {{ end -}}

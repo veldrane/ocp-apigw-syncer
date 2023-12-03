@@ -26,6 +26,6 @@ type NginxInstancies struct {
 }
 
 type CheckPayload struct {
-	token  *string
-	origin *string
+	authToken *string
+	origin    *string
 }

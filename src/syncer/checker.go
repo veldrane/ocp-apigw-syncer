@@ -25,11 +25,11 @@ func NewChecker(requestConfig *nginx.Config, nginxs *nginx.NginxInstancies, logg
 // Get last full report
 func (s *checkersrvc) Get(ctx context.Context, p *checker.GetPayload) (res *checker.Sync, err error) {
 
-	status := "synced"
+	//status := "synced"
 
 	if len(s.nginxs.Pods) < 2 {
 		s.logger.Printf("Not sync check required for token %s - nginx pods doesnt have replicas", p.AuthToken)
-		return &checker.Sync{Status: status}, nil
+		return &checker.Sync{Status: "Synced"}, nil
 	}
 
 	cp := nginx.InitCheckPayload(p.AuthToken, p.Origin)

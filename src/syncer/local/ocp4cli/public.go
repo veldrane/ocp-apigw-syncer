@@ -96,8 +96,15 @@ func (session *SessionT) GetPods(ctx *context.Context, config *nginx.Config) (ma
 	podList := nginx.New()
 	var pod nginx.NginxInstance
 
-	revision, _ := session.getDeploymentRevision(ctx, &config.Deployment, &config.Namespace)
+	revision, err := session.getDeploymentRevision(ctx, &config.Deployment, &config.Namespace)
+	if err != nil {
+		panic(err)
+	}
+
 	replicaSet, _ := session.getRsBasedOnRevision(ctx, &revision, &config.Namespace, &config.Deployment)
+	if err != nil {
+		panic(err)
+	}
 
 	rse := strings.Split(replicaSet, "-")
 	podsHash := rse[len(rse)-1]
