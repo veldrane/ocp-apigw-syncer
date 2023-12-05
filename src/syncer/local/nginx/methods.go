@@ -40,8 +40,6 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 	var wg sync.WaitGroup
 	wgStatusDone := make(chan interface{})
 
-	defer close(wgStatusDone)
-
 	logger.Printf("[ Check ] -> Checking sync status for auth_token %s ....", *p.authToken)
 	pods := n.getPods(ctx)
 	httpStatus := make([]int, len(pods))
@@ -63,7 +61,6 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 			logger.Printf("[ Check thread ] -> checking auth_token %s on hostname %s with address %s\n", *p.authToken, hostname, pod.Address)
 
 			*httpCode, err = getTokenStatus(ctx, p.authToken, config, &pod, logger)
-
 			if err != nil {
 				logger.Printf("[ Check thread ] -> warning check auth_token %s on pod %s failed ", *p.authToken, hostname)
 
@@ -83,7 +80,7 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 		err = errors.New(evalGroup(httpStatus))
 	case <-ctx.Done():
 		logger.Println("[ Check ] -> warning, timeout occured for token:", *p.authToken)
-		err = errors.New("timeout")
+		err = errors.New("Timeout")
 	}
 
 	return err
@@ -134,6 +131,8 @@ func (n *NginxInstancies) getPods(ctx context.Context) (res map[string]NginxInst
 }
 
 func getTokenStatus(ctx context.Context, token *string, config *Config, pod *NginxInstance, logger *log.Logger) (res int, err error) {
+
+	time.Sleep(3 * time.Second)
 
 	w, err := os.OpenFile("/tmp/sslkey.out", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
@@ -186,7 +185,7 @@ func initHttpClient(w *os.File, debug bool) (*http.Client, error) {
 
 	client := http.Client{
 		Transport: tr,
-		Timeout:   200 * time.Millisecond,
+		Timeout:   2500 * time.Millisecond,
 	}
 
 	return &client, nil
