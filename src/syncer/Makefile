@@ -5,8 +5,9 @@ BINARY_NAME=syncer
 PREFIX=/usr/local
 CMD_DIR=cmd/syncer
 DOCKER_PREFIX=../../build
-TIMESTAMP=$(shell date +%s)
-TAG=build-$(TIMESTAMP)
+COMMIT=$(shell git log -n1 --format="%h")
+TAG=build-$(COMMIT)
+CHART_DIR=../helm
 
 all: build
 
@@ -31,4 +32,6 @@ image:
 	CGO_ENABLED=0 $(GOBUILD) -o $(DOCKER_PREFIX)/$(BINARY_NAME) $(CMD_DIR)/main.go $(CMD_DIR)/http.go $(CMD_DIR)/background.go
 	cd $(DOCKER_PREFIX) \
 	&&	docker build . -f Dockerfile -t czdcm-quay.lx.ifortuna.cz/shared-images/syncer:$(TAG) \
-	&& 	docker push czdcm-quay.lx.ifortuna.cz/shared-images/syncer:$(TAG)
+	&& 	docker push czdcm-quay.lx.ifortuna.cz/shared-images/syncer:$(TAG) \
+	&& 	sed -i -E "s/syncerTag: .+/syncerTag: $(TAG)/" $(CHART_DIR)/values.yaml \
+	&& 	sed -i -E "s/appVersion: .+/appVersion: $(TAG)/" $(CHART_DIR)/Chart.yaml

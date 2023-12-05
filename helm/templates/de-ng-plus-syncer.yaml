@@ -8,7 +8,7 @@ metadata:
     apigw: ng-plus-syncer
   name: ng-plus-syncer
 spec:
-  replicas: {{ include "replicaCount" . }}
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:  
@@ -30,16 +30,16 @@ spec:
       - env:
         - name: TZ
           value: Europe/Prague
-        image: czdcm-quay.lx.ifortuna.cz/shared-images/syncer:0.9.3b
+        image: czdcm-quay.lx.ifortuna.cz/shared-images/syncer:{{- .Values.image.syncerTag }}
         imagePullPolicy: Always
         name: syncer
         resources:
           limits:
             cpu: 400m
-            memory: 400M
+            memory: 200Mi
           requests:
             cpu: 100m
-            memory: 400M
+            memory: 200Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
