@@ -13,6 +13,20 @@ produces:
     - application/xml
     - application/gob
 paths:
+    /health:
+        get:
+            tags:
+                - health
+            summary: get health
+            description: Ping endpoin
+            operationId: health#get
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/HealthGetResponseBody'
+            schemes:
+                - http
     /v1/synced:
         get:
             tags:
@@ -40,3 +54,15 @@ paths:
                             default: synced
             schemes:
                 - http
+definitions:
+    HealthGetResponseBody:
+        title: 'Mediatype identifier: app/vnd.health; view=default'
+        type: object
+        properties:
+            status:
+                type: string
+                default: Up
+                example: Quod rerum facere voluptas quisquam reiciendis.
+        description: GetResponseBody result type (default view)
+        example:
+            status: Atque pariatur qui illum dolores quo omnis.

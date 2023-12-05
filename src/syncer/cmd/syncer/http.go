@@ -8,7 +8,9 @@ import (
 	"os"
 	"sync"
 	checker "syncer/gen/checker"
+	health "syncer/gen/health"
 	checkersvr "syncer/gen/http/checker/server"
+	healthsvr "syncer/gen/http/health/server"
 	rootsvr "syncer/gen/http/root/server"
 	swaggersvr "syncer/gen/http/swagger/server"
 	root "syncer/gen/root"
@@ -21,7 +23,7 @@ import (
 
 // handleHTTPServer starts configures and starts a HTTP server on the given
 // URL. It shuts down the server if any error is received in the error channel.
-func handleHTTPServer(ctx context.Context, u *url.URL, checkerEndpoints *checker.Endpoints, rootEndpoints *root.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
+func handleHTTPServer(ctx context.Context, u *url.URL, healthEndpoints *health.Endpoints, checkerEndpoints *checker.Endpoints, rootEndpoints *root.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
 
 	// Setup goa log adapter.
 	var (
@@ -53,12 +55,14 @@ func handleHTTPServer(ctx context.Context, u *url.URL, checkerEndpoints *checker
 	// responses.
 	var (
 		checkerServer *checkersvr.Server
+		healthServer  *healthsvr.Server
 		rootServer    *rootsvr.Server
 		swaggerServer *swaggersvr.Server
 	)
 	{
 		eh := errorHandler(logger)
 		checkerServer = checkersvr.New(checkerEndpoints, mux, dec, enc, eh, nil)
+		healthServer = healthsvr.New(healthEndpoints, mux, dec, enc, eh, nil)
 		rootServer = rootsvr.New(rootEndpoints, mux, dec, enc, eh, nil)
 		swaggerServer = swaggersvr.New(nil, mux, dec, enc, eh, nil, nil, nil)
 		if debug {
@@ -74,6 +78,7 @@ func handleHTTPServer(ctx context.Context, u *url.URL, checkerEndpoints *checker
 	checkersvr.Mount(mux, checkerServer)
 	rootsvr.Mount(mux, rootServer)
 	swaggersvr.Mount(mux, swaggerServer)
+	healthsvr.Mount(mux, healthServer)
 
 	// Wrap the multiplexer with additional middlewares. Middlewares mounted
 	// here apply to all the service endpoints.

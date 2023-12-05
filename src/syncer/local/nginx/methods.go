@@ -104,16 +104,6 @@ func evalGroup(statusCodes []int) string {
 	}
 
 	successRate := (float32(oks) / float32(len(statusCodes))) * 100
-	//fmt.Printf("Debug: evalGroup oks: %d, errors %d \n", oks, errs)
-	//if errs == 0 && oks > 0 {
-	//	res = "Synced"
-	//} else if errs > 0 && oks > 0 {
-	//fmt.Printf("Debug: rate2 %f, status codes: %d  \n", rate, len(statusCodes))
-	//	if successRate > 50 {
-	//		//fmt.Printf("Debug: partial synced \n")
-	//		res = "PartialySynced"
-	//	}
-	//}
 
 	if successRate > 99 {
 		res = "Synced"
@@ -154,7 +144,7 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 	client, err := initHttpClient(w, false)
 	req, err := initHttpRequest(ctx, token, config, pod)
 	if err != nil {
-		logger.Printf("[ Get Token Status ] -> Failed create reqeust with context with err %s\n", err)
+		logger.Printf("[ Get Token Status ] -> Failed create request with context with err %s\n", err)
 		return 0, err
 	}
 
@@ -217,13 +207,13 @@ func initHttpRequest(ctx context.Context, token *string, config *Config, pod *Ng
 func IsChanged(ocpPods map[string]NginxInstance, storedPods map[string]NginxInstance, logger *log.Logger) bool {
 
 	if len(ocpPods) != len(storedPods) {
-		logger.Printf("[ Scraping thread ] -> New pods detected %d %d", len(ocpPods), len(storedPods))
+		//logger.Printf("[ Scraping thread ] -> New pods detected %d %d", len(ocpPods), len(storedPods))
 		return true
 	}
 
 	for i := range ocpPods {
 		if storedPods[i] == (NginxInstance{}) {
-			logger.Printf("[ Scraping thread ] -> Pods changed! New configuration will be stored!")
+			//logger.Printf("[ Scraping thread ] -> Pods changed! New configuration will be stored!")
 			return true
 		}
 	}

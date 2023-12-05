@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	checkerc "syncer/gen/http/checker/client"
+	healthc "syncer/gen/http/health/client"
 	rootc "syncer/gen/http/root/client"
 
 	goahttp "goa.design/goa/v3/http"
@@ -24,13 +25,15 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
 	return `checker get
+health get
 root default
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` checker get --origin "Aut ut nam eos." --auth-token "Corrupti hic architecto reprehenderit velit reiciendis."` + "\n" +
+	return os.Args[0] + ` checker get --origin "Corrupti hic architecto reprehenderit velit reiciendis." --auth-token "Fugiat nulla."` + "\n" +
+		os.Args[0] + ` health get` + "\n" +
 		os.Args[0] + ` root default` + "\n" +
 		""
 }
@@ -51,12 +54,19 @@ func ParseEndpoint(
 		checkerGetOriginFlag    = checkerGetFlags.String("origin", "REQUIRED", "")
 		checkerGetAuthTokenFlag = checkerGetFlags.String("auth-token", "REQUIRED", "")
 
+		healthFlags = flag.NewFlagSet("health", flag.ContinueOnError)
+
+		healthGetFlags = flag.NewFlagSet("get", flag.ExitOnError)
+
 		rootFlags = flag.NewFlagSet("root", flag.ContinueOnError)
 
 		rootDefaultFlags = flag.NewFlagSet("default", flag.ExitOnError)
 	)
 	checkerFlags.Usage = checkerUsage
 	checkerGetFlags.Usage = checkerGetUsage
+
+	healthFlags.Usage = healthUsage
+	healthGetFlags.Usage = healthGetUsage
 
 	rootFlags.Usage = rootUsage
 	rootDefaultFlags.Usage = rootDefaultUsage
@@ -78,6 +88,8 @@ func ParseEndpoint(
 		switch svcn {
 		case "checker":
 			svcf = checkerFlags
+		case "health":
+			svcf = healthFlags
 		case "root":
 			svcf = rootFlags
 		default:
@@ -99,6 +111,13 @@ func ParseEndpoint(
 			switch epn {
 			case "get":
 				epf = checkerGetFlags
+
+			}
+
+		case "health":
+			switch epn {
+			case "get":
+				epf = healthGetFlags
 
 			}
 
@@ -135,6 +154,13 @@ func ParseEndpoint(
 			case "get":
 				endpoint = c.Get()
 				data, err = checkerc.BuildGetPayload(*checkerGetOriginFlag, *checkerGetAuthTokenFlag)
+			}
+		case "health":
+			c := healthc.NewClient(scheme, host, doer, enc, dec, restore)
+			switch epn {
+			case "get":
+				endpoint = c.Get()
+				data = nil
 			}
 		case "root":
 			c := rootc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -173,7 +199,30 @@ Get last full report
     -auth-token STRING: 
 
 Example:
-    %[1]s checker get --origin "Aut ut nam eos." --auth-token "Corrupti hic architecto reprehenderit velit reiciendis."
+    %[1]s checker get --origin "Corrupti hic architecto reprehenderit velit reiciendis." --auth-token "Fugiat nulla."
+`, os.Args[0])
+}
+
+// healthUsage displays the usage of the health command and its subcommands.
+func healthUsage() {
+	fmt.Fprintf(os.Stderr, `Service is the health service interface.
+Usage:
+    %[1]s [globalflags] health COMMAND [flags]
+
+COMMAND:
+    get: Ping endpoin
+
+Additional help:
+    %[1]s health COMMAND --help
+`, os.Args[0])
+}
+func healthGetUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] health get
+
+Ping endpoin
+
+Example:
+    %[1]s health get
 `, os.Args[0])
 }
 

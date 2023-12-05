@@ -12,6 +12,7 @@ import (
 	"sync"
 	syncer "syncer"
 	checker "syncer/gen/checker"
+	health "syncer/gen/health"
 	root "syncer/gen/root"
 	"syscall"
 
@@ -54,21 +55,18 @@ func main() {
 			SyncTimeout: 100}
 
 		nginxs = nginx.New()
-		//nginxs.Push(nginx.NginxInstance{Address: "127.0.0.1", Port: "8080"}, "ng-plus-apigw-6cc76b4d5-vxtvg")
-		//nginxs.Push(nginx.NginxInstance{Address: "172.32.15.184", Port: config.HttpsPort}, "ng-plus-apigw-6dd49bb9b-ktl2h")
-		//nginxs.Push(nginx.NginxInstance{Address: "172.32.93.176", Port: config.HttpsPort}, "ng-plus-apigw-6dd49bb9b-m5jl7")
-		//nginxs.Push(nginx.NginxInstance{Address: "172.32.97.254", Port: config.HttpsPort}, "ng-plus-apigw-6dd49bb9b-zszhn")
-		//nginxs.Push(nginx.NginxInstance{Address: "10.6.173.157", Port: "443"}, "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz")
 	}
 
 	// Initialize the services.
 	var (
 		checkerSvc checker.Service
+		healthSvc  health.Service
 		rootSvc    root.Service
 	)
 	{
 		checkerSvc = syncer.NewChecker(&config, &nginxs, logger)
 		rootSvc = syncer.NewRoot(logger)
+		healthSvc = syncer.NewHealth(logger)
 	}
 
 	// Wrap the services in endpoints that can be invoked from other services
@@ -76,10 +74,12 @@ func main() {
 	var (
 		checkerEndpoints *checker.Endpoints
 		rootEndpoints    *root.Endpoints
+		healthEndpoints  *health.Endpoints
 	)
 	{
 		checkerEndpoints = checker.NewEndpoints(checkerSvc)
 		rootEndpoints = root.NewEndpoints(rootSvc)
+		healthEndpoints = health.NewEndpoints(healthSvc)
 	}
 
 	// Create channel used by both the signal handler and server goroutines
@@ -129,7 +129,7 @@ func main() {
 			} else if u.Port() == "" {
 				u.Host = net.JoinHostPort(u.Host, "80")
 			}
-			handleHTTPServer(ctx, u, checkerEndpoints, rootEndpoints, &wg, errc1, logger, *dbgF)
+			handleHTTPServer(ctx, u, healthEndpoints, checkerEndpoints, rootEndpoints, &wg, errc1, logger, *dbgF)
 		}
 
 	default:

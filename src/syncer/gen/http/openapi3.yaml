@@ -6,6 +6,22 @@ info:
 servers:
     - url: http://0.0.0.0:8080
 paths:
+    /health:
+        get:
+            tags:
+                - health
+            summary: get health
+            description: Ping endpoin
+            operationId: health#get
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Health'
+                            example:
+                                status: Necessitatibus inventore.
     /v1/synced:
         get:
             tags:
@@ -22,8 +38,8 @@ paths:
                   schema:
                     type: string
                     description: nginx instance origin of the request
-                    example: Perspiciatis provident consequatur repellat enim.
-                  example: Vitae qui id qui.
+                    example: Consequuntur et eaque aut neque.
+                  example: Temporibus et ipsum laboriosam totam.
                 - name: X-Auth-Token
                   in: header
                   description: token cookie for synchronization check
@@ -32,8 +48,8 @@ paths:
                   schema:
                     type: string
                     description: token cookie for synchronization check
-                    example: Necessitatibus inventore.
-                  example: Quod rerum facere voluptas quisquam reiciendis.
+                    example: Molestias accusamus iste enim ipsam.
+                  example: Voluptas iste voluptate et deserunt.
             responses:
                 "200":
                     description: OK response.
@@ -42,9 +58,20 @@ paths:
                             schema:
                                 type: string
                                 default: synced
-                                example: Atque pariatur qui illum dolores quo omnis.
-                            example: Qui cum ab possimus.
-components: {}
+                                example: Et ullam itaque.
+                            example: Et tenetur.
+components:
+    schemas:
+        Health:
+            type: object
+            properties:
+                status:
+                    type: string
+                    default: Up
+                    example: Ea nisi officiis temporibus reprehenderit.
+            example:
+                status: Qui cum ab possimus.
 tags:
     - name: checker
       description: Check the replicas of nginx instancies
+    - name: health

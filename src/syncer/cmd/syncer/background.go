@@ -20,10 +20,14 @@ func handleBackgroundGatherer(ctx context.Context, pods *nginx.NginxInstancies, 
 		go func() {
 			for {
 				runningPods, _ := ocpSession.GetPods(&ctx, config)
-				logger.Printf("[ Scraping thread ] -> Waking up, checking ocp configuration.... %s", runningPods)
+				//logger.Printf("[ Scraping thread ] -> Waking up, checking ocp configuration....")
 				if nginx.IsChanged(runningPods, pods.Pods, logger) {
 					pods.Update(runningPods, logger)
-					logger.Printf("[ Scraping thread ] -> New definition has been loaded from OCP %s", runningPods)
+					var pl string
+					for k := range runningPods {
+						pl = pl + k + " "
+					}
+					logger.Printf("[ Scraping thread ] -> Pods updated: %s", pl)
 				}
 				time.Sleep(time.Duration(10) * time.Second)
 			}

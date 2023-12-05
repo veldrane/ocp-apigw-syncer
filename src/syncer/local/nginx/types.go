@@ -10,14 +10,14 @@ type NginxInstance struct {
 }
 
 type Config struct {
-	Namespace   string
-	Deployment  string
-	HostHeader  string
-	HostDomain  string
-	HttpPath    string
-	HttpsPort   string
-	SyncTimeout int
-	Retries     int
+	Namespace   string `yaml:"namespace"`
+	Deployment  string `yaml:"deployment"`
+	HostHeader  string `yaml:"host"`
+	HostDomain  string `yaml:"domain"`
+	HttpPath    string `yaml:"path"`
+	HttpsPort   string `yaml:"port"`
+	SyncTimeout int    `yaml:"sync_timeout"`
+	Retries     int    `yaml:"retries"`
 }
 
 type NginxInstancies struct {
