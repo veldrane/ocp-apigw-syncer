@@ -19,6 +19,7 @@ type Config struct {
 	SyncTimeout int    `yaml:"sync_timeout"`
 	ConnTimeout int    `yaml:"connection_timeout"`
 	Retries     int    `yaml:"retries"`
+	Deadline    int    `yaml:"request_deadline"`
 }
 
 type NginxInstancies struct {

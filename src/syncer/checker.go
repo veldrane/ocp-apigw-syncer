@@ -32,10 +32,10 @@ func (s *checkersrvc) Get(ctx context.Context, p *checker.GetPayload) (res *chec
 
 	cp := l.InitCheckPayload(p.AuthToken, p.Origin)
 
-	ctxCheck, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctxCheck, cancel := context.WithTimeout(ctx, time.Duration(s.requestConfig.Deadline*int(time.Millisecond)))
 	defer cancel()
 
-	err = s.nginxs.Check(s.requestConfig, cp, ctxCheck, s.logger)
+	status := s.nginxs.Check(s.requestConfig, cp, ctxCheck, s.logger)
 
-	return &checker.Sync{Status: err.Error()}, nil
+	return &checker.Sync{Status: status}, nil
 }

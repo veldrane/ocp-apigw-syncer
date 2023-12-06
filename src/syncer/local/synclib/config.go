@@ -19,5 +19,48 @@ func GetConfig() Config {
 		panic(err)
 	}
 
+	config.check()
+	config.setDefault()
+
 	return config
+}
+
+func (c *Config) check() {
+
+	if (c.Namespace == "") ||
+		(c.Deployment == "") ||
+		(c.HostHeader == "") ||
+		(c.HttpPath == "") ||
+		(c.HostDomain == "") {
+		panic("No mandatory fields have been found - please check config.yaml")
+	}
+
+}
+
+func (c *Config) setDefault() {
+
+	if c.HttpsPort == "" {
+		c.HttpsPort = "8443"
+	}
+
+	if c.Retries == 0 {
+		c.Retries = 5
+	}
+
+	if c.SyncTimeout == 0 {
+		c.SyncTimeout = 5
+	}
+
+	if c.ConnTimeout == 0 {
+		c.ConnTimeout = 100
+	}
+
+	if c.Retries == 0 {
+		c.Retries = 5
+	}
+
+	if c.Deadline == 0 {
+		c.Deadline = 1000
+	}
+
 }

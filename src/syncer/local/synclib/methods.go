@@ -3,7 +3,6 @@ package synclib
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,6 +16,7 @@ func New() NginxInstancies {
 	return NginxInstancies{Pods: make(map[string]NginxInstance)}
 }
 
+// Push method is just for testing data purpose
 func (n *NginxInstancies) Push(ng NginxInstance, hostname string) error {
 
 	n.Lock.Lock()
@@ -26,18 +26,10 @@ func (n *NginxInstancies) Push(ng NginxInstance, hostname string) error {
 	return nil
 }
 
-func (n *NginxInstancies) Delete(hostname string) error {
-
-	n.Lock.Lock()
-	delete(n.Pods, hostname)
-	n.Lock.Unlock()
-
-	return nil
-}
-
-func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Context, logger *log.Logger) (err error) {
+func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Context, logger *log.Logger) (status string) {
 
 	var wg sync.WaitGroup
+	var err error
 	wgStatusDone := make(chan interface{})
 
 	logger.Printf("[ Check ] -> Checking sync status for auth_token %s ....", *p.authToken)
@@ -77,13 +69,13 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 	select {
 	case <-wgStatusDone:
 		logger.Printf("[ Check ] -> all threads are done sucessfully for token %s, status %d \n", *p.authToken, httpStatus)
-		err = errors.New(evalGroup(httpStatus))
+		status = evalGroup(httpStatus)
 	case <-ctx.Done():
 		logger.Println("[ Check ] -> warning, timeout occured for token:", *p.authToken)
-		err = errors.New("Timeout")
+		status = "Timeout"
 	}
 
-	return err
+	return status
 }
 
 func evalGroup(statusCodes []int) string {
@@ -132,7 +124,7 @@ func (n *NginxInstancies) getPods(ctx context.Context) (res map[string]NginxInst
 
 func getTokenStatus(ctx context.Context, token *string, config *Config, pod *NginxInstance, logger *log.Logger) (res int, err error) {
 
-	time.Sleep(3 * time.Second)
+	//time.Sleep(3 * time.Second)
 
 	w, err := os.OpenFile("/tmp/sslkey.out", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
@@ -164,7 +156,8 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 			continue
 		default:
 			res = 0
-			err = errors.New(fmt.Sprint(statusCode))
+			err = fmt.Errorf("%d", statusCode)
+			//err = errors.New(fmt.Sprint(statusCode))
 			return res, err
 		}
 	}

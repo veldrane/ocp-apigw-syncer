@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -33,7 +33,7 @@ func handleBackgroundGatherer(ctx context.Context, pods *l.NginxInstancies, conf
 			}
 		}()
 
-		errc <- errors.New("scraping thread is dead baby")
+		errc <- fmt.Errorf("%s", "[ Scraping thread ] -> scraping thread is dead baby")
 
 	}()
 }
