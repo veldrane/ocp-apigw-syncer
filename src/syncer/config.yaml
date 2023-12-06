@@ -1,0 +1,9 @@
+namespace: "apigwp-cz"
+deployment: "ng-plus-apigw"
+host: "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz"
+domain: "ifortuna.cz"
+path: "/check"
+port: "8080"
+sync_timeout: 200
+connection_timeout: 200
+retries: 5
