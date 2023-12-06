@@ -5,7 +5,7 @@ go 1.20
 require (
 	k8s.io/apimachinery v0.27.3
 	k8s.io/client-go v0.27.3
-	github.com/nginx v0.0.0
+	github.com/synclib v0.0.0
 )
 
 require (
@@ -51,6 +51,6 @@ require (
 )
 
 replace (
-	github.com/nginx => ../nginx
+	github.com/synclib => ../synclib
 	bitbucket.org/veldrane/golibs/ocp4cli => ../ocp4cli
 )

@@ -8,10 +8,10 @@ import (
 	"time"
 
 	ocp4cli "bitbucket.org/veldrane/golibs/ocp4cli"
-	nginx "github.com/nginx"
+	l "github.com/synclib"
 )
 
-func handleBackgroundGatherer(ctx context.Context, pods *nginx.NginxInstancies, config *nginx.Config, logger *log.Logger, errc chan error) {
+func handleBackgroundGatherer(ctx context.Context, pods *l.NginxInstancies, config *l.Config, logger *log.Logger, errc chan error) {
 
 	go func() {
 		logger.Printf("[ Scraping thread ] -> Started sucessfully with period %s seconds", strconv.Itoa(10))
@@ -21,7 +21,7 @@ func handleBackgroundGatherer(ctx context.Context, pods *nginx.NginxInstancies, 
 			for {
 				runningPods, _ := ocpSession.GetPods(&ctx, config)
 				//logger.Printf("[ Scraping thread ] -> Waking up, checking ocp configuration....")
-				if nginx.IsChanged(runningPods, pods.Pods, logger) {
+				if l.IsChanged(runningPods, pods.Pods, logger) {
 					pods.Update(runningPods, logger)
 					var pl string
 					for k := range runningPods {

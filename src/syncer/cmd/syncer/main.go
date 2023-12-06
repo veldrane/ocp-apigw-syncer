@@ -16,7 +16,7 @@ import (
 	root "syncer/gen/root"
 	"syscall"
 
-	nginx "github.com/nginx"
+	l "github.com/synclib"
 )
 
 func main() {
@@ -40,21 +40,22 @@ func main() {
 	}
 
 	var (
-		nginxs nginx.NginxInstancies
-		config nginx.Config
+		nginxs l.NginxInstancies
+		config l.Config
 	)
 	{
-		config = nginx.Config{
-			HostHeader:  "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz",
-			HttpPath:    "/check",
-			HostDomain:  "ifortuna.cz",
-			HttpsPort:   "8443",
-			Deployment:  "ng-plus-apigw",
-			Namespace:   "apigwp-cz",
-			Retries:     5,
-			SyncTimeout: 100}
+		//config = nginx.Config{
+		//	HostHeader:  "api-apigwp-cz.t.dc1.cz.ipa.ifortuna.cz",
+		//	HttpPath:    "/check",
+		//	HostDomain:  "ifortuna.cz",
+		//	HttpsPort:   "8443",
+		//	Deployment:  "ng-plus-apigw",
+		//	Namespace:   "apigwp-cz",
+		//	Retries:     5,
+		//	SyncTimeout: 100}
 
-		nginxs = nginx.New()
+		config = l.GetConfig()
+		nginxs = l.New()
 	}
 
 	// Initialize the services.

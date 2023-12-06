@@ -6,19 +6,19 @@ import (
 	checker "syncer/gen/checker"
 	"time"
 
-	nginx "github.com/nginx"
+	l "github.com/synclib"
 )
 
 // checker service example implementation.
 // The example methods log the requests and return zero values.
 type checkersrvc struct {
-	requestConfig *nginx.Config
-	nginxs        *nginx.NginxInstancies
+	requestConfig *l.Config
+	nginxs        *l.NginxInstancies
 	logger        *log.Logger
 }
 
 // NewChecker returns the checker service implementation.
-func NewChecker(requestConfig *nginx.Config, nginxs *nginx.NginxInstancies, logger *log.Logger) checker.Service {
+func NewChecker(requestConfig *l.Config, nginxs *l.NginxInstancies, logger *log.Logger) checker.Service {
 	return &checkersrvc{requestConfig, nginxs, logger}
 }
 
@@ -30,7 +30,7 @@ func (s *checkersrvc) Get(ctx context.Context, p *checker.GetPayload) (res *chec
 		return &checker.Sync{Status: "Synced"}, nil
 	}
 
-	cp := nginx.InitCheckPayload(p.AuthToken, p.Origin)
+	cp := l.InitCheckPayload(p.AuthToken, p.Origin)
 
 	ctxCheck, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()

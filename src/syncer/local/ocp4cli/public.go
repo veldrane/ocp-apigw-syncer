@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	nginx "github.com/nginx"
+	l "github.com/synclib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -91,10 +91,10 @@ func getRestConfig() *rest.Config {
 	return restconfig
 }
 
-func (session *SessionT) GetPods(ctx *context.Context, config *nginx.Config) (map[string]nginx.NginxInstance, error) {
+func (session *SessionT) GetPods(ctx *context.Context, config *l.Config) (map[string]l.NginxInstance, error) {
 
-	podList := nginx.New()
-	var pod nginx.NginxInstance
+	podList := l.New()
+	var pod l.NginxInstance
 
 	revision, err := session.getDeploymentRevision(ctx, &config.Deployment, &config.Namespace)
 	if err != nil {
@@ -120,7 +120,7 @@ func (session *SessionT) GetPods(ctx *context.Context, config *nginx.Config) (ma
 	}
 
 	for _, k := range p.Items {
-		pod = nginx.NginxInstance{
+		pod = l.NginxInstance{
 			Address: k.Status.PodIP,
 			Port:    config.HttpsPort,
 		}

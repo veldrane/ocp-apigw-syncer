@@ -1,4 +1,4 @@
-package nginx
+package synclib
 
 import (
 	"sync"
@@ -17,6 +17,7 @@ type Config struct {
 	HttpPath    string `yaml:"path"`
 	HttpsPort   string `yaml:"port"`
 	SyncTimeout int    `yaml:"sync_timeout"`
+	ConnTimeout int    `yaml:"connection_timeout"`
 	Retries     int    `yaml:"retries"`
 }
 

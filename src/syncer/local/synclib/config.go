@@ -1,13 +1,13 @@
-package nginx
+package synclib
 
 import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
-func GetConfig() *Config {
+func GetConfig() Config {
 
 	var config Config
 
@@ -19,5 +19,5 @@ func GetConfig() *Config {
 		panic(err)
 	}
 
-	return &config
+	return config
 }
