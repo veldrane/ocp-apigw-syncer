@@ -48,7 +48,7 @@ func (c *Config) setDefault() {
 	}
 
 	if c.SyncTimeout == 0 {
-		c.SyncTimeout = 5
+		c.SyncTimeout = 150
 	}
 
 	if c.ConnTimeout == 0 {

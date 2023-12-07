@@ -42,6 +42,11 @@ spec:
             memory: 200Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /config.yaml
+          name: ng-plus-syncer
+          subPath: config.yaml
+
       dnsPolicy: ClusterFirst
       {{ if (or (eq .Values.env "p") (eq .Values.env "s")) -}}
       nodeSelector:
@@ -65,3 +70,9 @@ spec:
         operator: Equal
         value: ingress
       {{ end -}}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: ng-plus-syncer
+        name: ng-plus-syncer
+

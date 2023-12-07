@@ -6,7 +6,7 @@ image:
   //repository: docker-registry.default.svc:5000/shared-images/ftn-nginx-plus-rhel7
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  syncerTag: build-d276edc
+  syncerTag: build-3a71474
 
 feg:
   t:

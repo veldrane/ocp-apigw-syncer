@@ -132,7 +132,7 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 	}
 	defer w.Close()
 
-	client, err := initHttpClient(w, false)
+	client, err := initHttpClient(config, w, false)
 	req, err := initHttpRequest(ctx, token, config, pod)
 	if err != nil {
 		logger.Printf("[ Get Token Status ] -> Failed create request with context with err %s\n", err)
@@ -140,6 +140,8 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 	}
 
 	for i := 1; i <= config.Retries; i++ {
+
+		//time.Sleep(2 * time.Second)
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -166,7 +168,7 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 	return 401, nil
 }
 
-func initHttpClient(w *os.File, debug bool) (*http.Client, error) {
+func initHttpClient(config *Config, w *os.File, debug bool) (*http.Client, error) {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -178,7 +180,7 @@ func initHttpClient(w *os.File, debug bool) (*http.Client, error) {
 
 	client := http.Client{
 		Transport: tr,
-		Timeout:   2500 * time.Millisecond,
+		Timeout:   time.Duration(config.ConnTimeout) * time.Millisecond,
 	}
 
 	return &client, nil
@@ -222,7 +224,9 @@ func (n *NginxInstancies) Update(ngs map[string]NginxInstance, logger *log.Logge
 	}
 
 	for k, v := range ngs {
-		n.Pods[k] = v
+		if v.Address != "" {
+			n.Pods[k] = v
+		}
 	}
 
 	n.Lock.Unlock()
