@@ -41,10 +41,12 @@ Each gorutine tries to connect to own nginx instance on the jwt secured endpoint
 instance has token so its synced and finishes. If the response is 401 then, token is not present here. In this case, gorutine waits for some short delay and tries
 the request again until gets 200, reach the limits of the retries or reach the timeout of the context (hard timeout). After all gorutines finish, code evaluate
 the final state of each gorutine and returns one of the four state in header X-Token-Status:
+
     - Synced (all gorutines finishes with 200 code in the end)
     - Partialy (more than 50% gorutines finishes with 200 code in the end)
     - NotSynced (less than 50% gorutines finishes with 200 code in the end)
     - Timeout (the all request were not finished until context deadline)
+
 
 ## Project directory content
 
@@ -57,9 +59,15 @@ the final state of each gorutine and returns one of the four state in header X-T
 ## Important source directory and files in ./src/syncer
 
 ./design - design files for goa framework - look at make build
+
 ./local/ocp4cli - library for communication with openshift 4.x cluster
+
 ./local/synclib - library contains core logic of http handler
+
 ./gen - do not touch! - generated directory by goa framework. Customize code in this directory is not recommended
+
 ./public - swagger client and openapi.json definition
+
 ./cmd/syncer/main.go - entry point for syncer tool
+
 ./cmd/syncer/background.go - code of the scraper process
