@@ -51,8 +51,8 @@ type NginxInstancies struct {
 
 and pointer to that instance is passed to handleBackgroundGatherer(..) function in cmd/background.go
 
-This function get active replication set of the apigw pods based on the deployment and annotation "deployment.kubernetes.io/revision". Based on the active rs scraper
-process can be able to list active pods. If list of current running pods is different than stored list in the instnace of the NginxInstancies, then lock the mutes and
+This function get active replication set of the apigw pods based on the deployment and annotation "deployment.kubernetes.io/revision". Based on the active replicationset, scraper
+process is able to list active pods. If list of the current running pods is different than stored list in the instance of the NginxInstancies, then lock the mutex and
 changed the list. If not then leave the list untached.
 
 
@@ -62,16 +62,15 @@ Syncer get the resp api request on /v1/synced with two inputs:
     - token (header X-Auth-Token)
     - origin pod (header X-Nginx-Origin)
 
-Handler start multiple gorutine in single waitgrou for each instance of the nginx except the origin pod. The list of the pods is prepared by scraper process.
-Each gorutine tries to connect to own nginx instance on the jwt secured endpoint. If the response from the nginx instance is 200, then gorutine knows that this
-instance has token so its synced and finishes. If the response is 401 then, token is not present here. In this case, gorutine waits for some short delay and tries
-the request again until gets 200, reach the limits of the retries or reach the timeout of the context (hard timeout). After all gorutines finish, code evaluate
-the final state of each gorutine and returns one of the four state in header X-Token-Status:
+Handler start multiple gorutine in single waitgroup for each instance of the nginx, except the origin pod. The list of the pods is prepared by scraper process and synchronization
+between scraper and http handlers is done by mutex. Each gorutine tries to connect to own nginx instance on the jwt secured endpoint. If the response from the nginx instance is 200, then gorutine knows that this instance has token so its synced and finishes. If the response is 401 then, token is not present here. In this case, gorutine waits for some short delay and tries
+the request again until gets 200, reach the limits of the retries or reach the timeout of the context (hard timeout). After all gorutines finish, code evaluate the final state of each gorutine and returns one of the four state in header X-Token-Status:
 
     - Synced (all gorutines finishes with 200 code in the end)
     - Partialy (more than 50% gorutines finishes with 200 code in the end)
     - NotSynced (less than 50% gorutines finishes with 200 code in the end)
     - Timeout (the all request were not finished until context deadline)
+
 
 
 ## Project directory content
