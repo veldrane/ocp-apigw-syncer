@@ -5,7 +5,7 @@ data:
     deployment: "ng-plus-apigw"
     host: "{{ include "serverName" . -}}"
     domain: "{{- include "apigwDomain" . -}}"
-    path: "/check"
+    path: "/_synced"
     sync_timeout: 100
     request_deadline: 1000
 kind: ConfigMap

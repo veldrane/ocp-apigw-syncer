@@ -159,7 +159,6 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 		default:
 			res = 0
 			err = fmt.Errorf("%d", statusCode)
-			//err = errors.New(fmt.Sprint(statusCode))
 			return res, err
 		}
 	}
@@ -200,7 +199,7 @@ func initHttpRequest(ctx context.Context, token *string, config *Config, pod *Ng
 
 func IsChanged(ocpPods map[string]NginxInstance, storedPods map[string]NginxInstance, logger *log.Logger) bool {
 
-	if len(ocpPods) != len(storedPods) {
+	if numberOfOcpPods := len(ocpPods); numberOfOcpPods != len(storedPods) {
 		//logger.Printf("[ Scraping thread ] -> New pods detected %d %d", len(ocpPods), len(storedPods))
 		return true
 	}
@@ -218,7 +217,7 @@ func IsChanged(ocpPods map[string]NginxInstance, storedPods map[string]NginxInst
 func (n *NginxInstancies) Update(ngs map[string]NginxInstance, logger *log.Logger) error {
 
 	n.Lock.Lock()
-
+	// time.Sleep(10 * time.Second) - mutex test - sharing between client and scraper thread
 	for k := range n.Pods {
 		delete(n.Pods, k)
 	}

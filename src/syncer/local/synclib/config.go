@@ -52,7 +52,7 @@ func (c *Config) setDefault() {
 	}
 
 	if c.ConnTimeout == 0 {
-		c.ConnTimeout = 100
+		c.ConnTimeout = 200
 	}
 
 	if c.Retries == 0 {
