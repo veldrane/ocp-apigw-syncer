@@ -30,6 +30,30 @@ scraper process - periodically check openshift api and set internal list of the 
 http handler - checks the presence of the token based on the replicas
 
 
+## How scraper process works
+
+The structure NginxInstancies is initialized in cmd/main.go:
+
+```go local/synclib/types.go
+
+type NginxInstance struct {
+	Address string
+	Port    string
+}
+
+type NginxInstancies struct {
+	Lock sync.RWMutex
+	Pods map[string]NginxInstance
+}
+```
+
+and pointer to that instance is passed to handleBackgroundGatherer(..) function in cmd/background.go
+
+This function get active replication set of the apigw pods based on the deployment and annotation "deployment.kubernetes.io/revision". Based on the active rs scraper
+process can be able to list active pods. If list of current running pods is different than stored list in the instnace of the NginxInstancies, then lock the mutes and
+changed the list. If not then leave the list untached.
+
+
 ## How http handler works 
 
 Syncer get the resp api request on /v1/synced with two inputs:
