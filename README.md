@@ -34,7 +34,9 @@ http handler - checks the presence of the token based on the replicas
 
 The structure NginxInstancies is initialized in cmd/main.go:
 
-```go local/synclib/types.go
+```go 
+
+// local/synclib/types.go
 
 type NginxInstance struct {
 	Address string
