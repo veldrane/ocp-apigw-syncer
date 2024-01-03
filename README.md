@@ -51,10 +51,15 @@ the final state of each gorutine and returns one of the four state in header X-T
 ## Project directory content
 
 ./build - Dockerfile a all stuf necessary for syncer building
+
 ./helm - helm chart
+
 ./roles - syncer needs to have access for listing pods and replication sets inside the namespace. Role inside this directory contains these privileges. On new cluster needs to be installed first
+
 ./slides - reveal-md presentation, css, images and all stuff
+
 ./src - golang sources code
+
 
 ## Important source directory and files in ./src/syncer
 
