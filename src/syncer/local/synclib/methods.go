@@ -170,7 +170,10 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 func initHttpClient(config *Config, w *os.File, debug bool) (*http.Client, error) {
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+		MaxIdleConnsPerHost:   16,
+		MaxIdleConns:          256,
+		ResponseHeaderTimeout: time.Duration(config.ConnTimeout) / 2,
 	}
 
 	if debug {
