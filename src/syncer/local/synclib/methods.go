@@ -173,7 +173,7 @@ func initHttpClient(config *Config, w *os.File, debug bool) (*http.Client, error
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
 		MaxIdleConnsPerHost:   16,
 		MaxIdleConns:          256,
-		ResponseHeaderTimeout: time.Duration(config.ConnTimeout) / 2,
+		ResponseHeaderTimeout: (time.Duration(config.ConnTimeout) / 2) * time.Millisecond,
 	}
 
 	if debug {
