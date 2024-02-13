@@ -1,6 +1,7 @@
 package synclib
 
 import (
+	"net/http"
 	"sync"
 )
 
@@ -28,6 +29,7 @@ type NginxInstancies struct {
 }
 
 type CheckPayload struct {
-	authToken *string
-	origin    *string
+	authToken  *string
+	origin     *string
+	httpClient *http.Client
 }

@@ -2,11 +2,10 @@ package synclib
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 )
@@ -52,7 +51,7 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 
 			logger.Printf("[ Check thread ] -> checking auth_token %s on hostname %s with address %s\n", *p.authToken, hostname, pod.Address)
 
-			*httpCode, err = getTokenStatus(ctx, p.authToken, config, &pod, logger)
+			*httpCode, err = getTokenStatus(ctx, p.httpClient, p.authToken, config, &pod, logger)
 			if err != nil {
 				logger.Printf("[ Check thread ] -> warning check auth_token %s on pod %s failed ", *p.authToken, hostname)
 
@@ -103,11 +102,12 @@ func evalGroup(statusCodes []int) string {
 	return res
 }
 
-func InitCheckPayload(authToken string, origin string) CheckPayload {
+func InitCheckPayload(authToken string, origin string, httpClient *http.Client) CheckPayload {
 
 	res := CheckPayload{
-		authToken: &authToken,
-		origin:    &origin,
+		authToken:  &authToken,
+		origin:     &origin,
+		httpClient: httpClient,
 	}
 
 	return res
@@ -122,17 +122,17 @@ func (n *NginxInstancies) getPods(ctx context.Context) (res map[string]NginxInst
 	return res
 }
 
-func getTokenStatus(ctx context.Context, token *string, config *Config, pod *NginxInstance, logger *log.Logger) (res int, err error) {
+func getTokenStatus(ctx context.Context, client *http.Client, token *string, config *Config, pod *NginxInstance, logger *log.Logger) (res int, err error) {
 
 	//time.Sleep(3 * time.Second)
 
-	w, err := os.OpenFile("/tmp/sslkey.out", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
-	if err != nil {
-		logger.Printf("failed to open file err %+v", err)
-	}
-	defer w.Close()
+	//w, err := os.OpenFile("/tmp/sslkey.out", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	//if err != nil {
+	//	logger.Printf("failed to open file err %+v", err)
+	//}
+	// defer w.Close()
 
-	client, err := initHttpClient(config, w, false)
+	//client, err := initHttpClient(config, w, false)
 	req, err := initHttpRequest(ctx, token, config, pod)
 	if err != nil {
 		logger.Printf("[ Get Token Status ] -> Failed create request with context with err %s\n", err)
@@ -144,6 +144,9 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 		//time.Sleep(2 * time.Second)
 
 		resp, err := client.Do(req)
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+
 		if err != nil {
 			logger.Printf("[ Get Token Status ] -> Failed client.Do with err %s\n", err)
 			return 0, err
@@ -165,27 +168,6 @@ func getTokenStatus(ctx context.Context, token *string, config *Config, pod *Ngi
 
 	logger.Printf("[ Get Token Status ] -> Token %s on pod %s is not synced in the end. Exititng with 401", *token, pod.Address)
 	return 401, nil
-}
-
-func initHttpClient(config *Config, w *os.File, debug bool) (*http.Client, error) {
-
-	tr := &http.Transport{
-		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
-		MaxIdleConnsPerHost:   16,
-		MaxIdleConns:          256,
-		ResponseHeaderTimeout: (time.Duration(config.ConnTimeout) / 2) * time.Millisecond,
-	}
-
-	if debug {
-		tr.TLSClientConfig.KeyLogWriter = w
-	}
-
-	client := http.Client{
-		Transport: tr,
-		Timeout:   time.Duration(config.ConnTimeout) * time.Millisecond,
-	}
-
-	return &client, nil
 }
 
 func initHttpRequest(ctx context.Context, token *string, config *Config, pod *NginxInstance) (*http.Request, error) {

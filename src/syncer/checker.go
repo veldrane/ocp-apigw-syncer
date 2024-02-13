@@ -13,6 +13,9 @@ import (
 	checker "syncer/gen/checker"
 	"time"
 
+	"crypto/tls"
+	"net/http"
+
 	l "github.com/synclib"
 )
 
@@ -22,13 +25,21 @@ type checkersrvc struct {
 	requestConfig *l.Config
 	nginxs        *l.NginxInstancies
 	logger        *log.Logger
+	httpClient    http.Client
 }
 
 // NewChecker returns the checker service implementation.
 // Function return basic logger interface, list of the nginx pods and structure
 // describes global config
 func NewChecker(requestConfig *l.Config, nginxs *l.NginxInstancies, logger *log.Logger) checker.Service {
-	return &checkersrvc{requestConfig, nginxs, logger}
+
+	httpClient, err := initHttpClient(requestConfig)
+
+	if err != nil {
+		panic("Http client cannot be initialized")
+	}
+
+	return &checkersrvc{requestConfig, nginxs, logger, httpClient}
 }
 
 // Get last full report Main handler of the endpoint /v1/synced
@@ -40,7 +51,7 @@ func (s *checkersrvc) Get(ctx context.Context, p *checker.GetPayload) (res *chec
 		return &checker.Sync{Status: "Synced"}, nil
 	}
 
-	cp := l.InitCheckPayload(p.AuthToken, p.Origin)
+	cp := l.InitCheckPayload(p.AuthToken, p.Origin, &s.httpClient)
 
 	ctxCheck, cancel := context.WithTimeout(ctx, time.Duration(s.requestConfig.Deadline*int(time.Millisecond)))
 	defer cancel()
@@ -48,4 +59,21 @@ func (s *checkersrvc) Get(ctx context.Context, p *checker.GetPayload) (res *chec
 	status := s.nginxs.Check(s.requestConfig, cp, ctxCheck, s.logger)
 
 	return &checker.Sync{Status: status}, nil
+}
+
+func initHttpClient(config *l.Config) (http.Client, error) {
+
+	tr := http.Transport{
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+		MaxIdleConnsPerHost:   2,
+		MaxIdleConns:          4,
+		ResponseHeaderTimeout: (time.Duration(config.ConnTimeout) / 2) * time.Millisecond,
+	}
+
+	client := http.Client{
+		Transport: &tr,
+		Timeout:   time.Duration(config.ConnTimeout) * time.Millisecond,
+	}
+
+	return client, nil
 }
