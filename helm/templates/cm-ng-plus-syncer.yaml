@@ -6,8 +6,9 @@ data:
     host: "{{ include "serverName" . -}}"
     domain: "{{- include "apigwDomain" . -}}"
     path: "/_synced"
-    sync_timeout: 100
-    request_deadline: 1000
+    sync_timeout: 200
+    request_deadline: 2000
+    connection_timeout: 500
 kind: ConfigMap
 metadata:
   name: ng-plus-syncer

@@ -14,9 +14,12 @@ transition: 'none'
 #### General
 
 - main two parts 
+
         - main part is writen in Go (mainly this presentation)
         - second part is integrated in api gateway
+
 - skeleton is writen in Goa framework
+
         - http server
         - logging
         - root contexts
@@ -79,6 +82,10 @@ go build cmd/syncer/* -o syncer
 ```
 
 </div>
+
+<!--s-->
+
+<!-- .slide: data-background="images/check-service-design-file.png" data-background-size="1920px" -->
 
 <!--s-->
 
@@ -226,7 +233,7 @@ func handleBackgroundGatherer(ctx context.Context, pods *l.NginxInstancies, conf
 
 <div id=two-columns-black>
 
-#### Scraper process - how scraper found the right pods ?
+#### Scraper process - how scraper looks for the right pods ?
 
 </div>
 
@@ -353,7 +360,170 @@ func (n *NginxInstancies) Update(ngs map[string]NginxInstance, logger *log.Logge
 
 <!--s-->
 
+
 <!-- .slide: data-background="images/default-text-background-black-text-2.png" data-background-size="1920px" -->
+
+<div id=left2-small>
+
+#### http handler part
+
+</div>
+
+<!--s-->
+
+
+<!-- .slide: data-background="images/default-text-background-black-text-2.png" data-background-size="1920px" -->
+
+<div id=two-columns-black>
+
+#### http handler part - checker.go
+
+</div>
+
+<BR>
+
+<div id=left2-small>
+
+- skell is the product of the goa framework
+
+- service has to be inicialized - function NewChecksrv and type checksrvc
+	- added pointer to NginxInstancies function
+	- added pointer to the configguration type
+
+- logger is pointed by default by goa
+- all services defined by goa design files are initialized by src/syncer/cmd/syncer/main.go
+
+</div>
+
+<div id=right2-small>
+
+```go
+# src/syncer/checker.go
+// checker service example implementation.
+// The example methods log the requests and return zero values.
+type checkersrvc struct {
+	requestConfig	*l.Config
+	nginxs	*l.NginxInstancies
+	logger	*log.Logger
+}
+
+// NewChecker returns the checker service implementation.
+// Function return basic logger interface, list of the nginx pods and structure
+// describes global config
+func NewChecker(requestConfig *l.Config, nginxs *l.NginxInstancies, logger *log.Logger) checker.Service {
+	return &checkersrvc{requestConfig, nginxs, logger}
+}
+```
+
+</div>
+
+<!--s-->
+
+<!-- .slide: data-background="images/default-text-background-black-text-2.png" data-background-size="1920px" -->
+
+<div id=two-columns-black>
+
+#### http handler part - checker.go, function Get()
+
+</div>
+
+<div id=left2-small>
+
+- this function is called when apigw calls /v1/synced
+
+- checks if apigw uses replicas, if not return status "synced" and finishes
+
+- take the payload(from http headers) and wrape arround the special structure
+	- ugly, blee (i expect more parameters, but its better to pass one structure than multiple variables)
+
+- call the Check() in src/syncer/local/methods.go and store result in status variable
+
+</div>
+
+<div id=right2-small>
+
+```go
+# src/syncer/checker.go
+// Get last full report Main handler of the endpoint /v1/synced
+// Endpoint return one of the four statuses: Synced, Partialy, NotSynced, Timeout
+func (s *checkersrvc) Get(ctx context.Context, p *checker.GetPayload) (res *checker.Sync, err error) {
+
+	if numPods := len(s.nginxs.Pods); numPods < 2 {
+		s.logger.Printf("[ Get ] -> Not sync check required for token %s - nginx pods doesnt have replicas", p.AuthToken)
+		return &checker.Sync{Status: "Synced"}, nil
+	}
+
+	cp := l.InitCheckPayload(p.AuthToken, p.Origin)
+
+	ctxCheck, cancel := context.WithTimeout(ctx, time.Duration(s.requestConfig.Deadline*int(time.Millisecond)))
+	defer cancel()
+
+	status := s.nginxs.Check(s.requestConfig, cp, ctxCheck, s.logger)
+
+	return &checker.Sync{Status: status}, nil
+}
+```
+
+</div>
+
+<!--s-->
+
+<!-- .slide: data-background="images/syncer-check-function-2.png" data-background-size="1920px" -->
+
+<!--s-->
+
+<!-- .slide: data-background="images/default-text-background-black-text-2.png" data-background-size="1920px" -->
+
+<div id=two-columns-black>
+
+#### HTTP Handler - function getTokenStatus()
+
+</div>
+
+<div id=left2-small>
+
+- called inside the check gorutine
+
+- first init http client then request itself inside loop
+
+- support for ssl dump keys in case of the debug
+
+</div>
+
+<div id=right2-small>
+
+```go 
+# src/syncer/local/synclib/methods.go
+func getTokenStatus(ctx context.Context, token *string, config *Config, pod *NginxInstance, logger *log.Logger) (res int, err error) {
+.
+.
+	for i := 1; i <= config.Retries; i++ {
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Printf("[ Get Token Status ] -> Failed client.Do with err %s\n", err)
+			return 0, err
+		}
+		switch statusCode := resp.StatusCode; statusCode {
+		case 200:
+			return resp.StatusCode, nil
+		case 401:
+			logger.Printf("[ Get Token Status ] -> Token %s on pod %s not sync... retry\n", *token, pod.Address)
+			time.Sleep(time.Duration(config.SyncTimeout * int(time.Millisecond)))
+			continue
+		default:
+			res = 0
+			err = fmt.Errorf("%d", statusCode)
+			return res, err
+		}
+	}
+```
+</div>
+
+<!--s-->
+
+<!-- .slide: data-background="images/default-text-background-black-text-2.png" data-background-size="1920px" -->
+
+
 
 <div id=left2-small>
 
@@ -452,6 +622,8 @@ go func(wg *sync.WaitGroup) {
 
 <!--s-->
 
+<!-- .slide: data-background="images/default-text-background-black-text-2.png" data-background-size="1920px" -->
+
 <div id=left2-small>
 
 #### Contexts
@@ -521,12 +693,5 @@ func (n *NginxInstancies) Check(config *Config, p CheckPayload, ctx context.Cont
 ```
 
 </div>
-
-<!-- .slide: data-background="images/default-text-background-black-text-2.png" data-background-size="1920px" -->
-
-<!--s-->
-
-
-<!-- .slide: data-background="images/syncer-check-function-2.png" data-background-size="1920px" -->
 
 <!--s-->
