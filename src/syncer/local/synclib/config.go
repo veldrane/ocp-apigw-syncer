@@ -55,10 +55,6 @@ func (c *Config) setDefault() {
 		c.ConnTimeout = 200
 	}
 
-	if c.Retries == 0 {
-		c.Retries = 5
-	}
-
 	if c.Deadline == 0 {
 		c.Deadline = 1000
 	}
