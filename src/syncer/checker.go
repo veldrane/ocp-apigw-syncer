@@ -65,8 +65,8 @@ func initHttpClient(config *l.Config) (http.Client, error) {
 
 	tr := http.Transport{
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
-		MaxIdleConnsPerHost:   2,
-		MaxIdleConns:          4,
+		MaxIdleConnsPerHost:   config.HostKeepAlives,
+		MaxIdleConns:          config.MaxKeepAlives,
 		ResponseHeaderTimeout: (time.Duration(config.ConnTimeout) / 2) * time.Millisecond,
 	}
 

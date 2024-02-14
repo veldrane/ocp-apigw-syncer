@@ -63,4 +63,12 @@ func (c *Config) setDefault() {
 		c.Deadline = 1000
 	}
 
+	if c.MaxKeepAlives == 0 {
+		c.MaxKeepAlives = 512
+	}
+
+	if c.HostKeepAlives == 0 {
+		c.HostKeepAlives = 64
+	}
+
 }
